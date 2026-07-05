@@ -1,0 +1,16 @@
+# 系统文件
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# 临时文件
+*.tmp
+*.temp
+~$*.xlsx
+
+# IDE
+.vscode/
+*.code-workspace
+
+# Node (如果将来用到)
+node_modules/

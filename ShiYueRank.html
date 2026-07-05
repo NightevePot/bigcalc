@@ -1,0 +1,2860 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>太初誓约强度排行计算器</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            base: "#070b12",
+            panel: "#101722",
+            panel2: "#151f2d",
+            line: "#26344a",
+            cyanx: "#20d9ff",
+            greenx: "#5df2a2",
+            goldx: "#f6c960",
+            redx: "#ff6685"
+          },
+          boxShadow: {
+            glow: "0 0 34px rgba(32,217,255,.18)",
+            soft: "0 18px 60px rgba(0,0,0,.35)"
+          }
+        }
+      }
+    };
+  </script>
+</head>
+
+<body class="min-h-screen bg-base text-slate-100 antialiased">
+  <main
+    class="min-h-screen bg-[radial-gradient(circle_at_18%_0%,rgba(32,217,255,.14),transparent_28%),linear-gradient(145deg,#070b12_0%,#0a111b_46%,#111525_100%)]">
+    <div class="mx-auto flex min-h-screen w-full max-w-[1500px] flex-col px-4 py-4 sm:px-6 lg:px-8">
+      <!-- Header -->
+      <header class="flex items-center justify-between border-b border-line pb-4">
+        <div class="flex items-center gap-4">
+          <div class="grid h-12 w-12 place-items-center rounded-lg border border-goldx/40 bg-goldx/10 shadow-glow">
+            <i data-lucide="trophy" class="h-6 w-6 text-goldx"></i>
+          </div>
+          <div>
+            <h1 class="text-2xl font-semibold tracking-[0] text-white sm:text-3xl">太初誓约 · 强度排行</h1>
+            <p class="mt-1 text-sm text-slate-400">基于《誓约套装.xlsx》15s表 / 43s表公式迁移</p>
+          </div>
+        </div>
+      </header>
+
+      <!-- Tab Navigation -->
+      <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-panel/90 p-1.5">
+        <div class="flex gap-1">
+          <button data-tab="main"
+            class="tab-btn flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-medium text-slate-300 hover:text-white active-tab">
+            <i data-lucide="bar-chart-3" class="h-4 w-4"></i>强度排行
+          </button>
+          <button data-tab="detail"
+            class="tab-btn flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-medium text-slate-300 hover:text-white">
+            <i data-lucide="sliders-horizontal" class="h-4 w-4"></i>装备配置
+          </button>
+          <button data-tab="about"
+            class="tab-btn flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-medium text-slate-300 hover:text-white">
+            <i data-lucide="info" class="h-4 w-4"></i>说明
+          </button>
+        </div>
+        <div class="model-controls">
+          <select id="timeWindow" class="select select-compact">
+            <option value="15">15s 爆发</option>
+            <option value="43">43s 均衡</option>
+          </select>
+          <button type="button" id="openSkillPct" class="icon-text-btn">
+            <i data-lucide="settings-2" class="h-4 w-4"></i>
+            <span>参考百分比</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ===================== MAIN TAB ===================== -->
+      <section id="tab-main" class="mt-4 space-y-4">
+        <!-- Global Controls -->
+        <div class="toolbar-panel">
+          <div class="flex flex-wrap items-end gap-4">
+            <label class="field w-56">
+              <span class="label">基准套装</span>
+              <select id="baseSet" class="select"></select>
+            </label>
+            <label class="field w-24">
+              <span class="label">特效系数</span>
+              <input id="effectCoeff" type="number" value="10" min="0" max="20" step="0.5" class="input input-blue" />
+            </label>
+          </div>
+        </div>
+
+        <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_430px]">
+          <!-- Ranking Table -->
+          <div class="rank-panel overflow-hidden">
+            <div class="flex items-center justify-between border-b border-line px-5 py-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="list-ordered" class="h-5 w-5 text-cyanx"></i>
+                <h2 class="text-base font-semibold text-white">套装强度排行</h2>
+              </div>
+              <span id="resultCount" class="text-xs text-slate-400">共 0 个方案</span>
+            </div>
+            <div class="overflow-x-auto max-h-[72vh] overflow-y-auto">
+              <table id="rankTable" class="w-full text-sm">
+                <thead class="sticky top-0 z-10">
+                  <tr class="border-b border-line text-left text-xs text-slate-400 bg-panel/98">
+                    <th class="px-4 py-3 w-10">#</th>
+                    <th class="px-3 py-3">套装</th>
+                    <th class="px-3 py-3">B套分支</th>
+                    <th class="px-3 py-3 text-right">技攻倍率</th>
+                    <th class="px-3 py-3 text-right">特效总%</th>
+                    <th class="px-3 py-3 text-right">特效占比</th>
+                    <th class="px-3 py-3 text-right">技能伤害</th>
+                    <th class="px-3 py-3 text-right">特效伤害</th>
+                    <th class="px-3 py-3 text-right">总伤害</th>
+                    <th class="px-3 py-3 text-right text-goldx w-28">相对强度</th>
+                    <th class="px-3 py-3 text-right w-20">偏差</th>
+                  </tr>
+                </thead>
+                <tbody id="rankBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <aside class="space-y-4">
+            <section id="buildPreview" class="side-panel"></section>
+            <section class="side-panel">
+              <div class="mb-3 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="layout-grid" class="h-4 w-4 text-cyanx"></i>
+                  <h2 class="text-sm font-semibold text-white">当前套装分支</h2>
+                </div>
+                <span id="branchCount" class="text-xs text-slate-500"></span>
+              </div>
+              <div id="branchCards" class="branch-card-grid"></div>
+            </section>
+          </aside>
+          </div>
+      </section>
+
+      <!-- ===================== DETAIL TAB ===================== -->
+      <section id="tab-detail" class="mt-4 hidden space-y-4">
+        <div class="config-nav" id="setSubTabs"></div>
+        <div class="space-y-5" id="setConfigPanels"></div>
+      </section>
+
+      <!-- ===================== ABOUT TAB ===================== -->
+      <section id="tab-about" class="mt-4 hidden space-y-4">
+        <div class="rounded-lg border border-line bg-panel/95 p-6 shadow-soft max-w-3xl">
+          <h2 class="text-lg font-semibold text-white mb-4">计算说明</h2>
+          <div class="space-y-3 text-sm text-slate-300 leading-relaxed">
+            <p><strong class="text-cyanx">数据来源：</strong>《誓约套装3.xlsx》15s表 / 43s表</p>
+            <p><strong class="text-cyanx">技能百分比：</strong>内部默认 15s = 755000，43s = 1510000；页面显示为百分比时放大100倍</p>
+            <p><strong class="text-cyanx">技攻倍率 G：</strong>∏(1 + tech_i)，直接从Excel读取</p>
+            <p><strong class="text-cyanx">特效总百分比：</strong>从特效计算区求和，O列仅作参照；天命者O列为刷新技能百分比</p>
+            <p><strong class="text-cyanx">特效伤害：</strong>技攻倍率 × 特效总百分比 × 特效系数</p>
+            <p><strong class="text-cyanx">H列：</strong>展示为特效伤害占比，不作为特效伤害输入</p>
+            <p><strong class="text-cyanx">总伤害 = 技能伤害 + 特效伤害</strong></p>
+            <p><strong class="text-cyanx">相对强度：</strong>各方案总伤害 / 基准方案总伤害 × 100%</p>
+            <p><strong class="text-cyanx">特效系数：</strong>默认10，对应当前表格的特效倍率口径</p>
+            <p><strong class="text-cyanx">偏差列：</strong>计算值 vs 内置 Excel 相对强度参考值</p>
+            <p class="mt-4 pt-4 border-t border-line text-slate-400">
+              <strong class="text-goldx">特殊套装：</strong><br>
+              • <strong>混沌净化</strong> — 43s按CDR指数公式折算；15s不折算<br>
+              • <strong>天命者的气运</strong> — 三分支同步切换好运/中运/差运，O列按刷新技能百分比×10计入<br>
+              • <strong>群猎美学</strong> — 引路人分支可切换单人/组队，组队时展示团队价值<br>
+              • <strong>精灵国度</strong> — 初始CD减1次<br>
+              • <strong>专注/审判之日</strong> — 强势占比可调；审判之日15s默认100%，43s默认30/43<br>
+              • <strong>龙帝降临</strong> — 按爆发/虚弱倍率拆分，所有特效使用虚弱倍率<br>
+              • <strong>魔力操控</strong> — 触发次数可输入，默认15s=30、43s=68<br>
+              • <strong>究极能量</strong> — 觉醒特化；压倒性的力量三觉伴随特效使用一般部分技攻
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="toast"
+    class="pointer-events-none fixed right-4 top-4 z-50 hidden rounded-lg border border-greenx/40 bg-[#07130d]/95 px-4 py-3 text-sm text-greenx shadow-soft">
+  </div>
+
+  <div id="skillPctModal" class="modal-backdrop hidden">
+    <div class="modal-panel">
+      <div class="modal-head">
+        <div>
+          <h2>参考技能百分比</h2>
+          <p>用于 15s / 43s 模型的职业技能基础伤害。</p>
+        </div>
+        <button type="button" class="icon-btn" data-role="close-skill-pct" aria-label="关闭">
+          <i data-lucide="x" class="h-4 w-4"></i>
+        </button>
+      </div>
+      <div class="modal-grid">
+        <label class="field">
+          <span class="label">15s 参考百分比</span>
+          <input id="skillPct15" type="number" min="0" step="1000" class="input" />
+        </label>
+        <label class="field">
+          <span class="label">43s 参考百分比</span>
+          <input id="skillPct43" type="number" min="0" step="1000" class="input" />
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="plain-btn" data-role="reset-skill-pct">恢复默认</button>
+        <button type="button" class="primary-btn" data-role="apply-skill-pct">应用</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    //  EQUIPMENT DATA — 从誓约套装.xlsx 直接提取
+    //  技攻数值为十进制值 (如 4.372 = 437.2%)
+    //  特效百分比为百分比值
+    //  列映射:
+    //    I     = A套技攻
+    //    J~N   = A套其他技攻加成
+    //    L     = B套技攻
+    //    O~AI  = A套特效 (pct/cd/eff/count)
+    //    AJ~AU = B套誓约特效
+    //    G     = 技攻倍率
+    //    H     = 特效伤害占比（展示用，不参与特效伤害计算）
+    // ============================================================
+
+    // 职业基础百分比：43s=151000000%, 15s=75500000%
+    // 代码中存储为纯数值（即%转换后的值）
+    // Excel中参考百分比行R82为此值，特效计算区的结果与此单位对齐
+    const DEFAULT_SKILL_PCT = { 15: 755000, 43: 1510000 };
+
+    // ============================================================
+    //  图标URL (From 图标 sheet)
+    // ============================================================
+    const ICONS = {
+      "青丘灵珠": "https://image.dnftools.com/equipment/suit/icon/8.png",
+      "理想之黄金乡": "https://image.dnftools.com/equipment/suit/icon/0.png",
+      "龙战八荒": "https://image.dnftools.com/equipment/suit/icon/1.png",
+      "诸神黄昏之女武神": "https://image.dnftools.com/equipment/suit/icon/7.png",
+      "精灵国度": "https://image.dnftools.com/equipment/suit/icon/5.png",
+      "造化自然": "https://image.dnftools.com/equipment/suit/icon/6.png",
+      "潜袭暗影": "https://image.dnftools.com/equipment/suit/icon/9.png",
+      "群猎美学": "https://image.dnftools.com/equipment/suit/icon/10.png",
+      "冥思者的魔力领域": "https://image.dnftools.com/equipment/suit/icon/11.png",
+      "混沌净化": "https://image.dnftools.com/equipment/suit/icon/2.png",
+      "天命者的气运": "https://image.dnftools.com/equipment/suit/icon/3.png",
+      "究极能量": "https://image.dnftools.com/equipment/suit/icon/4.png"
+    };
+
+    // Excel参考值 (分表D列)
+    const EXCEL_REF = {
+      15: {
+        "青丘灵珠|超脱": 1.05608,
+        "青丘灵珠|幻象": 0.96603,
+        "青丘灵珠|专注": 1.03086,
+        "理想之黄金乡|理想世界(12)": 1.05619,
+        "理想之黄金乡|无尽之梦": 1.00114,
+        "理想之黄金乡|至高膜拜(12)": 1.18893,
+        "龙战八荒|燃烧世界之火(如意珠)": 1.01710,
+        "龙战八荒|龙帝降临": 1.06478,
+        "龙战八荒|唯战之命": 1.03434,
+        "诸神黄昏之女武神|回旋天罚": 1.01943,
+        "诸神黄昏之女武神|终结之日": 1.07816,
+        "诸神黄昏之女武神|审判之日": 0.98195,
+        "精灵国度|皇家护卫": 0.96090,
+        "精灵国度|固执的追求者": 1.04518,
+        "精灵国度|仙境乐园": 0.97728,
+        "造化自然|天气异常": 1.00505,
+        "造化自然|自然守护者": 1.02946,
+        "造化自然|末日": 1.04427,
+        "潜袭暗影|幽冥之息": 1.00976,
+        "潜袭暗影|潜行背袭": 1.02916,
+        "潜袭暗影|暗影同盟": 1.0,
+        "群猎美学|引路人的助手(狩猎)": 0.86730,
+        "群猎美学|孤独的猎人": 0.98974,
+        "群猎美学|引路人的继承者(偏爱)": 0.82868,
+        "冥思者的魔力领域|秘法武器(普通)": 0.88368,
+        "冥思者的魔力领域|魔力棱镜": 0.99878,
+        "冥思者的魔力领域|魔力操控(30)": 0.94318,
+        "混沌净化|灿烂的净化": 0.80376,
+        "混沌净化|堕落深渊": 0.70761,
+        "混沌净化|混沌": 1.00847,
+        "天命者的气运|修炼而成的命运(好运)": 1.13831,
+        "天命者的气运|璀璨的命运(好运)": 1.13331,
+        "天命者的气运|混沌的命运(好运)": 1.14959,
+        "究极能量|无限动力": 0.74172,
+        "究极能量|压倒性的力量": 0.61382,
+        "究极能量|超载": 0.65567
+      },
+      43: {
+        "青丘灵珠|超脱": 1.05612,
+        "青丘灵珠|幻象": 1.01110,
+        "理想之黄金乡|理想世界(12)": 1.05619,
+        "潜袭暗影|暗影同盟": 1.0,
+        "混沌净化|灿烂的净化": 0.96111
+      }
+    };
+
+    // ============================================================
+    //  12套装备数据 (Excel直接提取)
+    //  技攻数值在Excel中为十进制增量（如4.372表示+437.2%）
+    //  计算公式: techMult = ∏(1 + value) for all tech values
+    //  特效百分比为绝对值（如128.63表示128.63%）
+    // ============================================================
+    // ============================================================
+    //  12套装备数据 (Excel直接提取)
+    //  技攻倍率(G值)已由Excel预计算，直接使用
+    //  特效百分比为绝对值（如128.63表示128.63%）
+    // ============================================================
+    const SETS = {
+      "青丘灵珠": {
+        id: "qingqiu",
+        aSet: {
+          name: "青丘灵珠",
+          // A套技攻组成 (用于参考)
+          techComposition: { I: 4.372, J: 0.8, L: 3.307, N: 0.121 },
+          gValue: 46.68625023
+          // 注意：每个B套分支独立包含其全部特效，无全局A套效果
+        },
+        bSets: {
+          "超脱": {
+            gValue: 46.68625023,
+            effects: [{ pct: 8, cd: 0, eff: 1, cnt: 1 }, { pct: 1, cd: 2, eff: 1, cnt: 8 }],
+            hValue: 0.00010596
+          },
+          "幻象": {
+            gValue: 38.989976,
+            effects: [{ pct: 7203.16, cd: 0, eff: 1, cnt: 1 }, { pct: 128.63, cd: 1, eff: 2, cnt: 16 }, { pct: 1543.5, cd: 6, eff: 1, cnt: 2 }],
+            hValue: 0.09540609
+          },
+          "专注": {
+            gValue: 40.6929,
+            effects: [],
+            isDual: true,
+            hValue: 0,
+            enhancedG: 56.97006,
+            enhancedRatio: 0.4,
+            globalRatio: 0.3
+          }
+        }
+      },
+      "理想之黄金乡": {
+        id: "golden",
+        aSet: {
+          name: "理想之黄金乡",
+          techComposition: { I: 5.327, J: 0.04, K: 0.12, L: 4.717, M: 0.06, N: 0.04558 },
+          gValue: 46.69595086,
+          effects: []
+        },
+        bSets: {
+          "理想世界(12)": { gValue: 46.69595086, effects: [], hValue: 0 },
+          "理想世界(11)": { gValue: 44.07311441, effects: [], hValue: 0 },
+          "理想世界(10)": { gValue: 41.98692532, effects: [], hValue: 0 },
+          "无尽之梦": { gValue: 44.26217352, effects: [], hValue: 0 },
+          "至高膜拜(12)": { gValue: 41.5563687, effects: [{ pct: 20000, cd: 240, eff: 1 }], hValue: 0.26490066 },
+          "至高膜拜(11)": { gValue: 41.5563687, effects: [{ pct: 14000, cd: 240, eff: 1 }], hValue: 0.18543046 },
+          "至高膜拜(10)": { gValue: 37.778517, effects: [{ pct: 14000, cd: 240, eff: 1 }], hValue: 0.18543046 }
+        }
+      },
+      "龙战八荒": {
+        id: "longzhan",
+        aSet: {
+          name: "龙战八荒",
+          gValue: 43.9677645,
+          // A套3效果: P=182.5, Q=10, R=1, S=2; T=139, U=3, V=1, W=6; X=129.5, Y=4, Z=1, AA=4
+          effects: [
+            { pct: 182.5, cd: 10, eff: 1, cnt: 2 },
+            { pct: 139, cd: 3, eff: 1, cnt: 6 },
+            { pct: 129.5, cd: 4, eff: 1, cnt: 4 }
+          ]
+        },
+        bSets: {
+          "燃烧世界之火(如意珠)": {
+            gValue: 43.9677645, hValue: 0.02274172, effects: [
+              { pct: 182.5, cd: 10, eff: 1, cnt: 2 },
+              { pct: 139, cd: 3, eff: 1, cnt: 6 },
+              { pct: 129.5, cd: 4, eff: 1, cnt: 4 }
+            ]
+          },
+          "燃烧世界之火(常态)": {
+            gValue: 41.646, hValue: 0.01169536, effects: [
+              { pct: 883, cd: 10, eff: 1, cnt: 2 },
+              { pct: 129.5, cd: 4, eff: 1, cnt: 4 }
+            ]
+          },
+          "龙帝降临": {
+            gValue: 41.530591993, hValue: 0.13352197, effects: [
+              { pct: 182.5, cd: 10, eff: 1, cnt: 2 },
+              { pct: 129.5, cd: 4, eff: 1, cnt: 4 },
+              { pct: 10080.91, cd: 60, eff: 1, cnt: 1 },
+              { pct: 10206, cd: 60, eff: 1, cnt: 1 }
+            ], isDual: true, enhancedRatio: 0.1, globalRatio: 0.2
+          },
+          "唯战之命": { gValue: 45.7300844, hValue: 0, effects: [], extraM: 0.3 }
+        }
+      },
+      "诸神黄昏之女武神": {
+        id: "nvwushen",
+        aSet: {
+          name: "诸神黄昏之女武神",
+          gValue: 39.48953256,
+          // A套4效果: P=4167, Q=140, R=1, S=1; T=2953.7, U=20, V=1, W=1; X=240.5, Y=15, Z=1, AA=2; AB=129, AC=8, AD=1, AE=2
+          effects: [
+            { pct: 4167, cd: 140, eff: 1, cnt: 1 },
+            { pct: 2953.7, cd: 20, eff: 1, cnt: 1 },
+            { pct: 240.5, cd: 15, eff: 1, cnt: 2 },
+            { pct: 129, cd: 8, eff: 1, cnt: 2 }
+          ]
+        },
+        bSets: {
+          "回旋天罚": { gValue: 39.48953256, hValue: 0.14133377, effects: [{ pct: 2811, cd: 20, eff: 1, cnt: 1 }] },
+          "终结之日": { gValue: 42.13042, hValue: 0.13142384, effects: [{ pct: 9922.5, cd: 120, eff: 1, cnt: 1 }] },
+          "审判之日": {
+            gValue: 34.287062, hValue: 0.26618543, effects: [
+              { pct: 365.4, cd: 1, eff: 1, cnt: 15 },
+              { pct: 1370.25, cd: 5, eff: 1, cnt: 4 },
+              { pct: 4567.5, cd: 10, eff: 1, cnt: 2 }
+            ], isDual: true, enhancedRatio: 0.25
+          }
+        }
+      },
+      "精灵国度": {
+        id: "jingling",
+        aSet: {
+          name: "精灵国度",
+          gValue: 33.044678184
+        },
+        bSets: {
+          "皇家护卫": {
+            gValue: 33.044678184, hValue: 0.28562914, effects: [
+              { pct: 275.6, cd: 2, eff: 1, cnt: 8, initialCd: true },
+              { pct: 343.2, cd: 3, eff: 1, cnt: 6 },
+              { pct: 293.8, cd: 2, eff: 1, cnt: 8 },
+              { pct: 965.9, cd: 5, eff: 1, cnt: 4 },
+              { pct: 3464.5, cd: 10, eff: 1, cnt: 2 },
+              { pct: 693, cd: 3, eff: 1, cnt: 6 }
+            ]
+          },
+          "固执的追求者": {
+            gValue: 33.09264, hValue: 0.39635762, effects: [
+              { pct: 29925, cd: 0, eff: 1, cnt: 1 },
+              { pct: 3150, cd: 5, eff: 1, cnt: 4 },
+              { pct: 17325, cd: 120, eff: 1, cnt: 1 }
+            ]
+          },
+          "仙境乐园": {
+            gValue: 32.147136, hValue: 0.34403974, effects: [
+              { pct: 275.6, cd: 2, eff: 1, cnt: 8, initialCd: true },
+              { pct: 343.2, cd: 3, eff: 1, cnt: 6 },
+              { pct: 293.8, cd: 2, eff: 1, cnt: 8 },
+              { pct: 965.9, cd: 5, eff: 1, cnt: 4 },
+              { pct: 3464.5, cd: 10, eff: 1, cnt: 2 },
+              { pct: 504, cd: 2, eff: 1, cnt: 8 },
+              { pct: 756, cd: 3, eff: 1, cnt: 6 }
+            ]
+          }
+        }
+      },
+      "造化自然": {
+        id: "zaohua",
+        aSet: {
+          name: "造化自然",
+          gValue: 39.688084125,
+          // A套2效果: P=983.5, Q=5, R=1, S=4; T=3055, U=60, V=1, W=1
+          effects: [
+            { pct: 983.5, cd: 5, eff: 1, cnt: 4 },
+            { pct: 3055, cd: 60, eff: 1, cnt: 1 }
+          ]
+        },
+        bSets: {
+          "天气异常": { gValue: 39.688084125, hValue: 0.1196053, effects: [{ pct: 340.2, cd: 3, eff: 1, cnt: 6 }] },
+          "自然守护者": { gValue: 43.744035, hValue: 0.04046358, effects: [{ pct: 3055, cd: 60, eff: 1, cnt: 1 }] },
+          "末日": {
+            gValue: 41.966625, hValue: 0.10013245, effects: [
+              { pct: 3307.5, cd: 30, eff: 1, cnt: 1 },
+              { pct: 4252.5, cd: 120, eff: 1, cnt: 1 }
+            ]
+          }
+        }
+      },
+      "潜袭暗影": {
+        id: "qianxi",
+        aSet: {
+          name: "潜袭暗影",
+          gValue: 42.924
+        },
+        bSets: {
+          "幽冥之息": { gValue: 42.924, hValue: 0.08010596, effects: [{ pct: 3024, cd: 0, eff: 1, cnt: 1 }, { pct: 1008, cd: 4, eff: 1, cnt: 3 }] },
+          "潜行背袭": { gValue: 45.5008708, hValue: 0.04005298, effects: [{ pct: 3024, cd: 0, eff: 1, cnt: 1 }], extraM: 0.1 },
+          "暗影同盟": { gValue: 44.21172, hValue: 0.04005298, effects: [{ pct: 3024, cd: 0, eff: 1, cnt: 1 }] }
+        }
+      },
+      "群猎美学": {
+        id: "qunlie",
+        aSet: {
+          name: "群猎美学",
+          tech: { I: 4.938, J: 0.05, L: 5, N: 0.025 },
+          effects: [],
+          gValue: 38.344635
+        },
+        bSets: {
+          "引路人的助手(狩猎)": { tech: {}, effects: [], gValue: 38.344635, hValue: 0, isTeam: true, teamBoost: 1.0135 },
+          "引路人的助手(单人)": { tech: {}, effects: [], gValue: 43.1285847, hValue: 0, soloM: 0.181 },
+          "孤独的猎人": { tech: {}, effects: [], gValue: 43.7583096, hValue: 0, extraM: 0.2 },
+          "引路人的继承者(偏爱)": { tech: {}, effects: [], gValue: 36.63746, hValue: 0, isTeam: true, teamBoost: 1.0297 },
+          "引路人的继承者(单人)": { tech: {}, effects: [], gValue: 42.4994536, hValue: 0, extraM: 0.16 }
+        }
+      },
+      "冥思者的魔力领域": {
+        id: "moli",
+        aSet: {
+          name: "冥思者的魔力领域",
+          gValue: 32.0085792,
+          effects: [
+            { pct: 921.25, cd: 1, eff: 1, cnt: 15 },
+            { pct: 233.75, cd: 1, eff: 1, cnt: 15 }
+          ]
+        },
+        bSets: {
+          "秘法武器(普通)": { gValue: 32.0085792, hValue: 0.22057947, effects: [{ pct: 189, cd: 1, eff: 1, cnt: 15 }] },
+          "秘法武器(追击)": { gValue: 32.0085792, hValue: 0.22057947, effects: [{ pct: 189, cd: 1, eff: 1, cnt: 15 }] },
+          "魔力棱镜": { gValue: 38.3916, hValue: 0.15019868, effects: [{ pct: 11340, cd: 30, eff: 1, cnt: 1 }] },
+          "魔力操控(30)": { gValue: 31.892848, hValue: 0.30749007, effects: [{ pct: 23215.5, cd: 0, eff: 1, cnt: 1 }, { pct: 346.5, cd: 0.5, eff: 1 }], isDual: true, enhancedRatio: 0.3 },
+          "魔力操控(50)": { gValue: 31.892848, hValue: 0.39927815, effects: [{ pct: 30145.5, cd: 0, eff: 1, cnt: 1 }, { pct: 346.5, cd: 0.5, eff: 1 }], isDual: true, enhancedRatio: 0.5 },
+          "魔力操控(100)": { gValue: 31.892848, hValue: 0.62874834, effects: [{ pct: 47470.5, cd: 0, eff: 1, cnt: 1 }, { pct: 346.5, cd: 0.5, eff: 1 }], isDual: true, enhancedRatio: 1.0 }
+        }
+      },
+      "混沌净化": {
+        id: "hundun",
+        aSet: {
+          name: "混沌净化",
+          tech: { I: 4.189, J: 0.175, L: 4.714, N: 0.02 },
+          effects: [],
+          gValue: 35.535460281
+        },
+        bSets: {
+          "灿烂的净化": { tech: {}, effects: [], gValue: 35.535460281, hValue: 0, isCDR: true, cdrTotal: 0.37 },
+          "堕落深渊": { tech: {}, effects: [], gValue: 31.284481, hValue: 0, isCDR: true, cdrTotal: 0.7 },
+          "混沌": { tech: {}, effects: [], gValue: 44.58606738, hValue: 0, isCDR: true, cdrTotal: -0.1, extraM: 0.42 }
+        }
+      },
+      "天命者的气运": {
+        id: "tianming",
+        aSet: {
+          name: "天命者的气运",
+          tech: { I: 4.558, J: 0.04564, L: 4.484 },
+          effects: [],
+          gValue: 31.74847348
+        },
+        bSets: {
+          "修炼而成的命运(好运)": { tech: {}, effects: [{ pct: 43718.88, cd: 0, eff: 1 }], gValue: 31.87127861, hValue: 0.57905807, isFate: true, refreshPct: 0.04564 },
+          "修炼而成的命运(中运)": { tech: {}, effects: [{ pct: 33142.92, cd: 0, eff: 1 }], gValue: 31.87127861, hValue: 0.43897901, isFate: true, refreshPct: 0.04564 },
+          "修炼而成的命运(差运)": { tech: {}, effects: [], gValue: 30.480072, hValue: 0, isFate: true, refreshPct: 0 },
+          "璀璨的命运(好运)": { tech: {}, effects: [{ pct: 44463.56, cd: 0, eff: 1 }], gValue: 31.5342009, hValue: 0.58892131, isFate: true, refreshPct: 0.04564 },
+          "璀璨的命运(中运)": { tech: {}, effects: [{ pct: 33142.92, cd: 0, eff: 1 }], gValue: 31.5342009, hValue: 0.43897901, isFate: true, refreshPct: 0.04564 },
+          "璀璨的命运(差运)": { tech: {}, effects: [], gValue: 31.5342009, hValue: 0, isFate: true, refreshPct: 0.04564 },
+          "混沌的命运(好运)": { tech: {}, effects: [{ pct: 46187.6, cd: 0, eff: 1 }], gValue: 31.5342009, hValue: 0.61175623, isFate: true, refreshPct: 0.04014 },
+          "混沌的命运(中运)": { tech: {}, effects: [{ pct: 33142.92, cd: 0, eff: 1 }], gValue: 31.36823515, hValue: 0.43897901, isFate: true, refreshPct: 0.04014 },
+          "混沌的命运(差运)": { tech: {}, effects: [], gValue: 31.06243924, hValue: 0, isFate: true, refreshPct: 0.03 }
+        }
+      },
+      "究极能量": {
+        id: "jiuji",
+        aSet: {
+          name: "究极能量",
+          effects: [],
+          gValue: 32.7925395
+        },
+        bSets: {
+          "无限动力": {
+            baseG: 32.7925395,
+            thirdG: 69.25784342,
+            // 三觉+76%, 二觉+60%, 一觉+0%, 一般+0%
+            defaultThirdRatio: 0.12,
+            defaultSecondRatio: 0.08,
+            defaultFirstRatio: 0.06,
+            effects: [{ pct: 6072, cd: 275, eff: 1, cnt: 1 }]
+          },
+          "压倒性的力量": {
+            baseG: 27.13788,
+            thirdG: 114.63040512,
+            defaultThirdRatio: 0.12,
+            defaultSecondRatio: 0.08,
+            defaultFirstRatio: 0.06,
+            effects: [{ pct: 14572.8, cd: 275, eff: 1, cnt: 1 }]
+          },
+          "超载": {
+            baseG: 28.98819,
+            secondG: 56.8168524,
+            defaultThirdRatio: 0,
+            defaultSecondRatio: 0.06,
+            defaultFirstRatio: 0.04,
+            effects: [{ pct: 3036, cd: 51, eff: 1, cnt: 1 }]
+          }
+        }
+      }
+    };
+
+    // ============================================================
+    //  43s 时间窗口 G 覆盖值（仅作为旧数据兜底；X3表优先）
+    // ============================================================
+    const G43_OVERRIDES = {
+      "冥思者的魔力领域|魔力棱镜": 38.775516
+    };
+
+    const SET_ORDER = [
+      "青丘灵珠", "理想之黄金乡", "龙战八荒", "诸神黄昏之女武神",
+      "精灵国度", "造化自然", "潜袭暗影", "群猎美学",
+      "冥思者的魔力领域", "混沌净化", "天命者的气运", "究极能量"
+    ];
+
+    const X3 = {"15":{"4":[46.6862502312,8,[[1,2,1,8]]],"5":[38.989976,7203.16,[[128.63,1,2,16],[1543.5,6,1,2]]],"6":[40.6929,0,[]],"7":[56.97006,0,[]],"8":[0.3,0,[]],"9":[46.69595086297,0,[]],"10":[44.073114411163,0,[]],"11":[41.986925320725,0,[]],"12":[44.26217352,0,[]],"13":[41.5563687,20000,[[20000,240,1,1]]],"14":[41.5563687,14000,[[14000,240,1,1]]],"15":[37.778517,14000,[[14000,240,1,1]]],"16":[43.9677645,1717,[[182.5,10,1,2],[139,3,1,6],[129.5,4,1,4]]],"17":[41.646,883,[[182.5,10,1,2],[129.5,4,1,4]]],"18":[41.530591993,10080.90909090909,[[182.5,10,1,2],[129.5,4,1,4],[10206,60,1,1]]],"19":[37.75508363,883,[[182.5,10,1,2],[129.5,4,1,4],[10206,60,0,1]]],"20":[0.2,0,[]],"21":[45.7300844,0,[]],"22":[39.48953256,10670.7,[[4167,140,1,1],[2953.7,20,1,1],[240.5,15,1,2],[129,8,1,2],[2811,20,1,1]]],"23":[42.13042,9922.5,[[9922.5,120,1,1]]],"24":[34.287062,20097,[[365.4,1,1,15],[1370.25,5,1,4],[4567.5,10,1,2]]],"25":[34.287062,13860,[[252,1,1,15],[945,5,1,4],[3150,10,1,2]]],"26":[0.25,0,[]],"27":[33.044678184,21565,[[275.6,2,1,8],[343.2,3,1,6],[293.8,2,1,8],[965.9,5,1,4],[3464.5,10,1,2],[693,3,1,6]]],"28":[33.09264,29925,[[3150,5,1,4],[17325,120,1,1]]],"29":[32.147136,25975,[[275.6,2,1,8],[343.2,3,1,6],[293.8,2,1,8],[965.9,5,1,4],[3464.5,10,1,2],[504,2,1,8],[756,3,1,6]]],"30":[39.688084125,9030.2,[[983.5,5,1,4],[3055,60,1,1],[340.2,3,1,6]]],"31":[43.744035,3055,[[3055,60,1,1]]],"32":[41.966625,7560,[[3307.5,30,1,1],[4252.5,120,1,1]]],"33":[42.924,3024,[[1008,4,1,3]]],"34":[45.5008708,0,[]],"35":[44.21172,0,[]],"36":[38.344635,0,[]],"39":[43.1285847,0,[]],"40":[43.7583096,0,[]],"41":[36.63746,0,[]],"44":[42.4994536,0,[]],"45":[32.0085792,16653.75,[[921.25,1,1,15],[189,1,1,15]]],"46":[32.0085792,16653.75,[[687.5,1,1,15],[233.75,1,1,15],[189,1,1,15]]],"47":[38.3916,11340,[[11340,30,1,1]]],"48":[31.892848,23215.5,[[346.5,0.5,1,30],[346.5,99999,30,1],[346.5,99999,7,1]]],"49":[31.892848,30145.5,[[346.5,0.5,1,30],[346.5,99999,50,1],[346.5,99999,7,1]]],"50":[31.892848,47470.5,[[346.5,0.5,1,30],[346.5,99999,100,1],[346.5,99999,7,1]]],"51":[35.535460281,0,[]],"52":[31.284481,0,[]],"53":[44.58606738,0,[]],"54":[31.871278605809,43718.88459273753,[]],"55":[31.871278605809,33142.9152671366,[]],"56":[30.480072,0,[]],"57":[31.534200896266,44463.55907449133,[]],"58":[31.534200896266,33142.9152671366,[]],"59":[31.534200896266,0,[]],"60":[31.534200896266,46187.59550890182,[]],"61":[31.368235145591,33142.9152671366,[]],"62":[31.06243924,0,[]],"64":[32.7925395,0,[]],"65":[69.257843424,6072,[[6072,275,1,1]]],"66":[60.33827268,0,[]],"67":[41.4825624675,0,[]],"69":[27.13788,0,[]],"70":[114.63040512,14572.8,[[6072,275,1,1]]],"71":[43.420608,0,[]],"72":[31.208562,0,[]],"74":[28.98819,0,[]],"75":[46.381104,0,[]],"76":[56.8168524,3036,[[3036,51,1,1]]],"77":[52.178742,0,[]]},"43":{"4":[46.6862502312,22,[[1,2,1,22]]],"5":[38.989976,22123.94,[[128.63,1,2,44],[1543.5,6,1,7]]],"6":[40.6929,0,[]],"7":[56.97006,0,[]],"8":[0.3,0,[]],"9":[46.69595086297,0,[]],"10":[44.073114411163,0,[]],"11":[41.986925320725,0,[]],"12":[44.26217352,0,[]],"13":[41.5563687,20000,[[20000,240,1,1]]],"14":[41.5563687,14000,[[14000,240,1,1]]],"15":[37.778517,14000,[[14000,240,1,1]]],"16":[43.9677645,4422,[[182.5,10,1,5],[139,3,1,15],[129.5,4,1,11]]],"17":[41.646,2337,[[182.5,10,1,5],[129.5,4,1,11]]],"18":[41.530591993,11402.727272727272,[[182.5,10,1,5],[129.5,4,1,11],[10206,60,1,1]]],"19":[37.75508363,2337,[[182.5,10,1,5],[129.5,4,1,11],[10206,60,0,1]]],"20":[0.2,0,[]],"21":[45.7300844,0,[]],"22":[39.48953256,21461.1,[[4167,140,1,1],[2953.7,20,1,3],[240.5,15,0,3],[129,8,0,6],[2811,20,1,3]]],"23":[42.13042,9922.5,[[9922.5,120,1,1]]],"24":[34.287062,50881.95,[[365.4,1,1,43],[1370.25,5,1,9],[4567.5,10,1,5]]],"25":[34.287062,35091,[[252,1,1,43],[945,5,1,9],[3150,10,1,5]]],"26":[0.25,0,[]],"27":[33.044678184,52825.4,[[275.6,2,1,22],[343.2,3,1,15],[293.8,2,1,22],[965.9,5,1,9],[4157.5,10,1,5],[378,3,1,15]]],"28":[33.09264,45675,[[3150,5,1,9],[17325,120,1,1]]],"29":[32.147136,48795.9,[[275.6,2,1,22],[343.2,3,1,15],[293.8,2,1,22],[965.9,5,1,9],[3464.5,10,0,4],[504,2,1,22],[756,3,1,15]]],"30":[39.688084125,17009.5,[[983.5,5,1,9],[3055,60,1,1],[340.2,3,1,15]]],"31":[43.744035,3055,[[3055,60,1,1]]],"32":[41.966625,10867.5,[[3307.5,30,1,2],[4252.5,120,1,1]]],"33":[42.924,5418,[[378,4,1,11],[630,20,1,2]]],"34":[45.5008708,0,[]],"35":[44.21172,0,[]],"36":[38.344635,0,[]],"39":[43.1285847,0,[]],"40":[43.7583096,0,[]],"41":[36.63746,0,[]],"44":[42.4994536,0,[]],"45":[32.0085792,49366.15,[[921.25,1,1,43],[226.8,1,1,43]]],"46":[32.0085792,49366.15,[[687.5,1,1,43],[233.75,1,1,43],[226.8,1,1,43]]],"47":[38.775516,22680,[[11340,30,1,2]]],"48":[31.892848,46881.450000000004,[[381.15,0.5,1,86],[381.15,99999,30,1],[381.15,99999,7,1]]],"49":[31.892848,54504.450000000004,[[381.15,0.5,1,86],[381.15,99999,50,1],[381.15,99999,7,1]]],"50":[31.892848,115488.45,[[381.15,0.5,1,86],[381.15,99999,210,1],[381.15,99999,7,1]]],"51":[35.535460281,0,[]],"52":[31.284481,0,[]],"53":[44.58606738,0,[]],"54":[31.748473482976,72763.92624803091,[]],"55":[31.871278605809,58211.14099842473,[]],"56":[31.871278605809,37877.617448156125,[]],"57":[31.534200896266,72492.07705650001,[]],"58":[31.534200896266,54996.66360511477,[]],"59":[31.534200896266,37877.617448156125,[]],"60":[31.368235145591,66848.2939142944,[]],"61":[31.368235145591,54931.764928254415,[]],"62":[31.368235145591,37877.617448156125,[]],"64":[32.7925395,0,[]],"65":[69.257843424,6072,[[6072,275,1,1]]],"66":[60.33827268,0,[]],"67":[41.4825624675,0,[]],"69":[27.13788,0,[]],"70":[114.63040512,6072,[[6072,275,1,1]]],"71":[43.420608,0,[]],"72":[31.208562,0,[]],"74":[28.98819,0,[]],"75":[46.381104,0,[]],"76":[56.8168524,3036,[[3036,51,1,1]]],"77":[52.178742,0,[]]}};
+
+    const BUILD_ROWS = {
+      "青丘灵珠|超脱": 4,
+      "青丘灵珠|幻象": 5,
+      "青丘灵珠|专注": { normal: 6, enhanced: 7, ratio: 8 },
+      "理想之黄金乡|理想世界(12)": 9,
+      "理想之黄金乡|理想世界(11)": 10,
+      "理想之黄金乡|理想世界(10)": 11,
+      "理想之黄金乡|无尽之梦": 12,
+      "理想之黄金乡|至高膜拜(12)": 13,
+      "理想之黄金乡|至高膜拜(11)": 14,
+      "理想之黄金乡|至高膜拜(10)": 15,
+      "龙战八荒|燃烧世界之火(如意珠)": 16,
+      "龙战八荒|燃烧世界之火(常态)": 17,
+      "龙战八荒|龙帝降临": { enhanced: 18, normal: 19, ratio: 20 },
+      "龙战八荒|唯战之命": 21,
+      "诸神黄昏之女武神|回旋天罚": 22,
+      "诸神黄昏之女武神|终结之日": 23,
+      "诸神黄昏之女武神|审判之日": { enhanced: 24, normal: 25, ratio: 26 },
+      "精灵国度|皇家护卫": 27,
+      "精灵国度|固执的追求者": 28,
+      "精灵国度|仙境乐园": 29,
+      "造化自然|天气异常": 30,
+      "造化自然|自然守护者": 31,
+      "造化自然|末日": 32,
+      "潜袭暗影|幽冥之息": 33,
+      "潜袭暗影|潜行背袭": 34,
+      "潜袭暗影|暗影同盟": 35,
+      "群猎美学|引路人的助手(狩猎)": 36,
+      "群猎美学|引路人的助手(单人)": 39,
+      "群猎美学|孤独的猎人": 40,
+      "群猎美学|引路人的继承者(偏爱)": 41,
+      "群猎美学|引路人的继承者(单人)": 44,
+      "冥思者的魔力领域|秘法武器(普通)": 45,
+      "冥思者的魔力领域|秘法武器(追击)": 46,
+      "冥思者的魔力领域|魔力棱镜": 47,
+      "冥思者的魔力领域|魔力操控(30)": 48,
+      "冥思者的魔力领域|魔力操控(50)": 49,
+      "冥思者的魔力领域|魔力操控(100)": 50,
+      "混沌净化|灿烂的净化": 51,
+      "混沌净化|堕落深渊": 52,
+      "混沌净化|混沌": 53,
+      "天命者的气运|修炼而成的命运(好运)": 54,
+      "天命者的气运|修炼而成的命运(中运)": 55,
+      "天命者的气运|修炼而成的命运(差运)": 56,
+      "天命者的气运|璀璨的命运(好运)": 57,
+      "天命者的气运|璀璨的命运(中运)": 58,
+      "天命者的气运|璀璨的命运(差运)": 59,
+      "天命者的气运|混沌的命运(好运)": 60,
+      "天命者的气运|混沌的命运(中运)": 61,
+      "天命者的气运|混沌的命运(差运)": 62,
+      "究极能量|无限动力": { normal: 64, third: 65, second: 66, first: 67 },
+      "究极能量|压倒性的力量": { normal: 69, third: 70, second: 71, first: 72, thirdEffectUsesNormalG: true, thirdUsesO: true },
+      "究极能量|超载": { normal: 74, third: 75, second: 76, first: 77 }
+    };
+
+    const BRANCH_MODEL = {
+      "理想之黄金乡": [
+        { key: "理想世界", title: "理想世界", sourceByOption: { "12": "理想世界(12)", "11": "理想世界(11)", "10": "理想世界(10)" }, optionKey: "golden", optionLabel: "增幅", options: [["12", "增幅12及以上"], ["11", "增幅11~12"], ["10", "不足增幅11"]] },
+        { key: "无尽之梦", title: "无尽之梦", source: "无尽之梦" },
+        { key: "至高膜拜", title: "至高膜拜", sourceByOption: { "12": "至高膜拜(12)", "11": "至高膜拜(11)", "10": "至高膜拜(10)" }, optionKey: "golden", optionLabel: "增幅", options: [["12", "增幅12及以上"], ["11", "增幅11~12"], ["10", "不足增幅11"]] }
+      ],
+      "龙战八荒": [
+        { key: "燃烧世界之火", title: "燃烧世界之火", sourceByOption: { orb: "燃烧世界之火(如意珠)", normal: "燃烧世界之火(常态)" }, optionKey: "orbMode", optionLabel: "如意珠", options: [["orb", "开启如意珠"], ["normal", "不开如意珠"]] },
+        { key: "龙帝降临", title: "龙帝降临", source: "龙帝降临" },
+        { key: "唯战之命", title: "唯战之命", source: "唯战之命" }
+      ],
+      "群猎美学": [
+        { key: "引路人的助手", title: "引路人的助手", sourceByOption: { solo: "引路人的助手(单人)", team: "引路人的助手(狩猎)" }, optionKey: "guideMode", optionLabel: "模式", options: [["solo", "单人"], ["team", "组队"]] },
+        { key: "孤独的猎人", title: "孤独的猎人", source: "孤独的猎人" },
+        { key: "引路人的继承者", title: "引路人的继承者", sourceByOption: { solo: "引路人的继承者(单人)", team: "引路人的继承者(偏爱)" }, optionKey: "successorMode", optionLabel: "模式", options: [["solo", "单人"], ["team", "组队"]] }
+      ],
+      "冥思者的魔力领域": [
+        { key: "秘法武器", title: "秘法武器", source: "秘法武器(普通)", note: "普通 / 追击属性一致，已合并展示。" },
+        { key: "魔力棱镜", title: "魔力棱镜", source: "魔力棱镜" },
+        { key: "魔力操控", title: "魔力操控", source: "魔力操控(30)", magicControl: true }
+      ],
+      "天命者的气运": [
+        { key: "修炼而成的命运", title: "修炼而成的命运", sourceByLuck: { good: "修炼而成的命运(好运)", mid: "修炼而成的命运(中运)", bad: "修炼而成的命运(差运)" } },
+        { key: "璀璨的命运", title: "璀璨的命运", sourceByLuck: { good: "璀璨的命运(好运)", mid: "璀璨的命运(中运)", bad: "璀璨的命运(差运)" } },
+        { key: "混沌的命运", title: "混沌的命运", sourceByLuck: { good: "混沌的命运(好运)", mid: "混沌的命运(中运)", bad: "混沌的命运(差运)" } }
+      ]
+    };
+
+    let state = {
+      timeWindow: 15,
+      baseSetKey: "潜袭暗影|暗影同盟",
+      selectedKey: "潜袭暗影|暗影同盟",
+      effectCoeff: 10,
+      setConfigs: {},
+      effectOverrides: {},
+      activeConfigSet: SET_ORDER[0],
+      skillPct: { ...DEFAULT_SKILL_PCT },
+      globalOptions: {
+        golden: "12",
+        fateLuck: "good",
+        guideMode: "solo",
+        successorMode: "solo",
+        orbMode: "orb"
+      }
+    };
+
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => [...document.querySelectorAll(s)];
+    const nf = (n) => (n || 0).toLocaleString("zh-CN", { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+    const nf0 = (n) => Math.round(n || 0).toLocaleString("zh-CN");
+    const pct = (n, digits = 2) => `${(n || 0).toFixed(digits)}%`;
+    const skillPct = (tw = state.timeWindow) => state.skillPct[tw] || DEFAULT_SKILL_PCT[tw];
+    const displayPct = (n, digits = 2) => `${((n || 0) * 100).toLocaleString("zh-CN", { maximumFractionDigits: digits, minimumFractionDigits: digits })}%`;
+
+    function getSetConfig(setName, branchName) {
+      if (!state.setConfigs[setName]) state.setConfigs[setName] = {};
+      if (branchName && !state.setConfigs[setName][branchName]) state.setConfigs[setName][branchName] = {};
+      return branchName ? state.setConfigs[setName][branchName] : state.setConfigs[setName];
+    }
+
+    function setConfigValue(setName, branchName, key, value) {
+      getSetConfig(setName, branchName)[key] = value;
+    }
+
+    function effectConfigKey(rowNo, index) {
+      return `${state.timeWindow}:${rowNo}:${index}`;
+    }
+
+    function effectOverride(rowNo, index, field, fallback) {
+      const bag = state.effectOverrides || {};
+      const item = bag[effectConfigKey(rowNo, index)] || {};
+      return item[field] != null ? Number(item[field]) : fallback;
+    }
+
+    function branchModels(setName) {
+      const set = SETS[setName];
+      if (!set) return [];
+      return BRANCH_MODEL[setName] || Object.keys(set.bSets).map(key => ({ key, title: key, source: key }));
+    }
+
+    function optionValue(optionKey) {
+      return state.globalOptions[optionKey];
+    }
+
+    function resolveModelSource(model) {
+      if (!model) return null;
+      if (model.sourceByLuck) return model.sourceByLuck[state.globalOptions.fateLuck] || Object.values(model.sourceByLuck)[0];
+      if (model.sourceByOption) return model.sourceByOption[optionValue(model.optionKey)] || Object.values(model.sourceByOption)[0];
+      return model.source || model.key;
+    }
+
+    function sourceModel(setName, branchName) {
+      const models = branchModels(setName);
+      return models.find(m => m.key === branchName) ||
+        models.find(m => resolveModelSource(m) === branchName) ||
+        models.find(m => (m.sourceByOption && Object.values(m.sourceByOption).includes(branchName)) ||
+          (m.sourceByLuck && Object.values(m.sourceByLuck).includes(branchName)));
+    }
+
+    function displayKey(setName, branchName) {
+      const m = sourceModel(setName, branchName);
+      return `${setName}|${m ? m.key : branchName}`;
+    }
+
+    function magicControlCount() {
+      const cfg = getSetConfig("冥思者的魔力领域", "魔力操控");
+      const def = state.timeWindow === 15 ? 30 : 68;
+      const max = state.timeWindow * 5 + 1;
+      const v = cfg.magicCount != null ? Number(cfg.magicCount) : def;
+      return Math.max(0, Math.min(max, Math.round(v)));
+    }
+
+    function clampNumber(value, min, max) {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return min;
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function awakenDefaultRatios(tw = state.timeWindow) {
+      return tw === 43
+        ? { third: 0.12, second: 0.08, first: 0.06 }
+        : { third: 0.20, second: 0.12, first: 0.08 };
+    }
+
+    function awakenRatioFromConfig(cfg, type, tw = state.timeWindow) {
+      const defaults = awakenDefaultRatios(tw);
+      const timeKey = `${type}Ratio${tw}`;
+      const legacyKey = `${type}Ratio`;
+      const value = cfg[timeKey] != null ? cfg[timeKey] : cfg[legacyKey];
+      return clampNumber(value != null ? value : defaults[type], 0, 0.3);
+    }
+
+    function fateLuckLabel() {
+      return { good: "好运", mid: "中运", bad: "差运" }[state.globalOptions.fateLuck] || "好运";
+    }
+
+    // ============================================================
+    //  特效攻击次数: 使用cnt字段(Excel预计算)或floor(tw/cd)+1
+    //  若 initialCd=true 则减1次(首次在CD中)
+    // ============================================================
+    function hitCount(cd, tw, initCd) {
+      if (cd <= 0 || cd >= 99999) return 1;
+      if (initCd) {
+        // 初始CD: 首次攻击发生在cd秒后
+        return Math.max(0, Math.floor((tw - cd) / cd) + 1);
+      }
+      return Math.floor(tw / cd) + 1;
+    }
+
+    // ============================================================
+    //  特效总百分比: Σ(pct × eff × count)
+    //  优先使用cnt字段(Excel预计算), 否则从cd计算
+    // ============================================================
+    function effTotal(effects, tw) {
+      let t = 0;
+      (effects || []).forEach(e => {
+        // cnt存在时直接使用Excel表内次数，避免43s二次推导偏离表格结果。
+        let cnt = e.cnt;
+        if (cnt == null) cnt = hitCount(e.cd, tw, e.initialCd);
+        t += (e.pct || 0) * (e.eff || 1) * cnt;
+      });
+      return t;
+    }
+
+    function effectCount(e, tw) {
+      if (!e) return 0;
+      if (e.cnt != null) return e.cnt;
+      return hitCount(e.cd || 0, tw, e.initialCd);
+    }
+
+    // ============================================================
+    //  技攻倍率: ∏(1 + value)  所有技攻增量加1后连乘
+    // ============================================================
+    function calcTechMult(techObj) {
+      let m = 1;
+      Object.values(techObj || {}).forEach(v => {
+        if (v && typeof v === 'number') m *= (1 + v);
+      });
+      return m;
+    }
+
+    // 合并A/B套技攻
+    function mergeTech(aTech, bTech) {
+      const r = { ...(aTech || {}) };
+      Object.keys(bTech || {}).forEach(k => {
+        r[k] = (r[k] || 0) + (bTech[k] || 0);
+      });
+      return r;
+    }
+
+    // CDR 43s权重: 1 + cdr * 0.53
+    function cdrBonus(cdr, tw) {
+      if (tw === 15) return 1;
+      if (!cdr || cdr <= 0) return 1;
+      return Math.exp(Math.log(1.04) * Math.log(1 - cdr) / Math.log(0.92));
+    }
+
+    function x3Cell(rowNo, tw = state.timeWindow) {
+      return X3[String(tw)]?.[String(rowNo)] || null;
+    }
+
+    function x3Effects(rowNo, tw = state.timeWindow, options = {}) {
+      const row = x3Cell(rowNo, tw);
+      return (row?.[2] || []).map(([pct, cd, eff, cnt], index) => {
+        const playRate = effectOverride(rowNo, index, "playRate", 1);
+        const item = { pct, cd, baseEff: eff, playRate, cnt, rowNo, effectIndex: index };
+        item.eff = eff * playRate;
+        if (options.magicControlCount != null && cd >= 99999 && index === 1) {
+          item.baseEff = options.magicControlCount;
+          item.eff = options.magicControlCount * playRate;
+        }
+        return item;
+      });
+    }
+
+    function x3EffectTotal(rowNo, tw = state.timeWindow, options = {}) {
+      return effTotal(x3Effects(rowNo, tw, options), tw);
+    }
+
+    function x3Row(rowNo, tw = state.timeWindow, options = {}) {
+      const row = x3Cell(rowNo, tw);
+      const rawEffects = x3Effects(rowNo, tw, options);
+      const oValue = row?.[1] || 0;
+      const effects = options.useO && oValue
+        ? [{ pct: oValue, cd: 0, baseEff: 1, playRate: effectOverride(rowNo, 0, "playRate", 1), eff: effectOverride(rowNo, 0, "playRate", 1), cnt: 1, source: "O列", rowNo, effectIndex: 0 }]
+        : rawEffects;
+      const effectPct = effTotal(effects, tw);
+      return {
+        rowNo,
+        techMult: row?.[0] ?? 1,
+        oValue,
+        effects,
+        totalEffPct: effectPct
+      };
+    }
+
+    function attachShares(result) {
+      const total = result.totalDamage || 0;
+      const effect = result.effectDamage || 0;
+      const skill = result.skillDamage || 0;
+      const totalShare = total > 0 ? effect / total : 0;
+      const hColumnShare = skill > 0 ? effect / skill : 0;
+      return {
+        ...result,
+        hBonus: 0,
+        effectShare: totalShare,
+        hColumnShare,
+        effectToSkillRatio: hColumnShare,
+        effectTotalShare: totalShare,
+        hShare: hColumnShare
+      };
+    }
+
+    function rowDamage(setName, branchName, row, options = {}) {
+      const tw = state.timeWindow;
+      const sp = skillPct(tw);
+      const coeffScale = state.effectCoeff || 10;
+      const techMult = row.techMult;
+      const skillBasePct = options.skillBasePct ?? sp;
+      const totalEffPct = row.totalEffPct || 0;
+      const effectTechMult = options.effectTechMult ?? techMult;
+      const skillDamage = skillBasePct * techMult;
+      const effectDamage = totalEffPct * effectTechMult * coeffScale;
+      return attachShares({
+        setName, branchName, techMult,
+        totalEffPct,
+        effects: row.effects || [],
+        oValue: row.oValue || 0,
+        skillDamage, effectDamage,
+        totalDamage: skillDamage + effectDamage
+      });
+    }
+
+    function weightedBuild(setName, branchName, normal, enhanced, ratio) {
+      const nr = 1 - ratio;
+      const n = rowDamage(setName, branchName, normal);
+      const e = rowDamage(setName, branchName, enhanced);
+      const skillDamage = n.skillDamage * nr + e.skillDamage * ratio;
+      const effectDamage = n.effectDamage * nr + e.effectDamage * ratio;
+      return attachShares({
+        setName, branchName,
+        techMult: n.techMult * nr + e.techMult * ratio,
+        totalEffPct: n.totalEffPct * nr + e.totalEffPct * ratio,
+        effects: [...(n.effects || []), ...(e.effects || [])],
+        skillDamage,
+        effectDamage,
+        totalDamage: skillDamage + effectDamage,
+        isDual: true,
+        enhancedRatio: ratio
+      });
+    }
+
+    function specialDualCompute(setName, branchName, br, tw) {
+      const map = BUILD_ROWS[`${setName}|${branchName}`];
+      if (!map || typeof map !== "object" || map.normal == null || map.enhanced == null) return null;
+      const cfg = (state.setConfigs[setName] && state.setConfigs[setName][branchName]) || {};
+      const defaultRatio = branchName === "审判之日"
+        ? (tw === 15 ? 1 : 30 / 43)
+        : (x3Cell(map.ratio, tw)?.[0] ?? br.enhancedRatio ?? 0.3);
+      const ratio = cfg.enhancedRatio != null ? cfg.enhancedRatio : defaultRatio;
+      return weightedBuild(setName, branchName, x3Row(map.normal, tw), x3Row(map.enhanced, tw), ratio);
+    }
+
+    function dragonEmperorCompute(displayBranchName, br, tw) {
+      const map = BUILD_ROWS["龙战八荒|龙帝降临"];
+      const normalRow = x3Row(map.normal, tw);
+      const burstRow = x3Row(map.enhanced, tw);
+      const cfg = getSetConfig("龙战八荒", "龙帝降临");
+      const defaultSeconds = tw === 15 ? 15 : 15;
+      const burstSeconds = Math.max(0, Math.min(tw, cfg.burstSeconds != null ? Number(cfg.burstSeconds) : defaultSeconds));
+      const burstRatio = tw === 15 ? 1 : burstSeconds / tw;
+      const normalSkillPct = tw === 43 ? Math.max(0, skillPct(tw) - 1000000) : 0;
+      const burstSkillPct = tw === 43 ? Math.min(1000000, skillPct(tw)) : skillPct(tw);
+      const skillDamage = tw === 43
+        ? burstSkillPct * burstRow.techMult + normalSkillPct * normalRow.techMult
+        : skillPct(tw) * burstRow.techMult;
+      const effects = normalRow.effects.filter(e => (e.eff || 0) !== 0);
+      if (burstSeconds > 0) effects.push({ pct: 10206, cd: 60, baseEff: 1, playRate: effectOverride(map.enhanced, 2, "playRate", 1), eff: effectOverride(map.enhanced, 2, "playRate", 1), cnt: 1, rowNo: map.enhanced, effectIndex: 2 });
+      const totalEffPct = effTotal(effects, tw);
+      const effectDamage = totalEffPct * normalRow.techMult * (state.effectCoeff || 10);
+      return attachShares({
+        setName: "龙战八荒",
+        branchName: displayBranchName,
+        sourceBranchName: "龙帝降临",
+        techMult: tw === 43
+          ? (burstRow.techMult * burstSkillPct + normalRow.techMult * normalSkillPct) / Math.max(1, skillPct(tw))
+          : burstRow.techMult,
+        totalEffPct,
+        effects,
+        skillDamage,
+        effectDamage,
+        totalDamage: skillDamage + effectDamage,
+        isDragonEmperor: true,
+        isDual: true,
+        enhancedRatio: burstRatio,
+        burstSeconds,
+        normalG: normalRow.techMult,
+        burstG: burstRow.techMult
+      });
+    }
+
+    function specialAwakenCompute(setName, branchName, br, tw) {
+      const map = BUILD_ROWS[`${setName}|${branchName}`];
+      if (!map || typeof map !== "object" || map.normal == null) return null;
+      const normalRow = x3Row(map.normal, tw);
+      const thirdRow = x3Row(map.third, tw, { useO: !!map.thirdUsesO });
+      const secondRow = x3Row(map.second, tw);
+      const firstRow = x3Row(map.first, tw);
+      const cfg = getSetConfig(setName, branchName);
+      const thirdRatio = awakenRatioFromConfig(cfg, "third", tw);
+      const secondRatio = awakenRatioFromConfig(cfg, "second", tw);
+      const firstRatio = awakenRatioFromConfig(cfg, "first", tw);
+      const normalRatio = Math.max(0, 1 - thirdRatio - secondRatio);
+      const isOverload = branchName === "超载";
+      const refreshFirst = isOverload ? cfg.refreshFirst !== false : false;
+      const refreshSecond = isOverload ? cfg.refreshSecond !== false : false;
+      const firstSkillTimes = refreshFirst ? 2 : 1;
+      const secondSkillTimes = refreshSecond ? 2 : 1;
+      let normalPenalty = 1;
+      if (isOverload && refreshFirst && !cfg.firstDetached) normalPenalty *= 0.65;
+      if (isOverload && refreshSecond && !cfg.secondDetached) normalPenalty *= 0.65;
+
+      const sp = skillPct(tw);
+      const coeffScale = state.effectCoeff || 10;
+      const normalDamage = sp * normalRatio * normalRow.techMult * normalPenalty;
+      const thirdDamage = sp * thirdRatio * thirdRow.techMult;
+      const secondDamage = sp * secondRatio * secondRow.techMult * secondSkillTimes;
+      const firstDamage = sp * firstRatio * firstRow.techMult * firstSkillTimes;
+      const effectSource = isOverload ? secondRow : thirdRow;
+      const effectTimes = isOverload && refreshSecond ? 2 : 1;
+      const effects = (effectSource.effects || []).map(e => ({
+        ...e,
+        cnt: (e.cnt != null ? e.cnt : effectCount(e, tw)) * effectTimes
+      }));
+      const totalEffPct = effTotal(effects, tw);
+      const effectDamage = totalEffPct * normalRow.techMult * coeffScale;
+      const skillDamage = normalDamage + thirdDamage + secondDamage + firstDamage;
+      const structureParts = [
+        { key: "normal", label: "一般技能", damage: normalDamage, mult: normalRow.techMult, ratio: normalRatio, penalty: normalPenalty },
+        { key: "third", label: "三觉", damage: thirdDamage + (isOverload ? 0 : effectDamage), mult: thirdRow.techMult, ratio: thirdRatio },
+        { key: "second", label: "二觉", damage: secondDamage + (isOverload ? effectDamage : 0), mult: secondRow.techMult, ratio: secondRatio, times: secondSkillTimes },
+        { key: "first", label: "一觉", damage: firstDamage, mult: firstRow.techMult, ratio: firstRatio, times: firstSkillTimes }
+      ];
+      return attachShares({
+        setName, branchName,
+        techMult: (normalDamage + thirdDamage + secondDamage + firstDamage) / Math.max(1, sp),
+        totalEffPct,
+        effects,
+        skillDamage,
+        effectDamage,
+        totalDamage: skillDamage + effectDamage,
+        isAwaken: true,
+        structureParts,
+        thirdRatio, secondRatio, firstRatio, otherRatio: normalRatio,
+        normalPenalty,
+        refreshFirst,
+        refreshSecond,
+        firstDetached: !!cfg.firstDetached,
+        secondDetached: !!cfg.secondDetached,
+        baseG: normalRow.techMult,
+        thirdG: thirdRow.techMult,
+        secondG: secondRow.techMult,
+        firstG: firstRow.techMult
+      });
+    }
+
+    // ============================================================
+    //  核心计算
+    // ============================================================
+    function compute(setName, branchName) {
+      const set = SETS[setName];
+      if (!set) return null;
+      const model = sourceModel(setName, branchName);
+      const displayBranchName = model ? model.key : branchName;
+      const sourceBranchName = resolveModelSource(model) || branchName;
+      const br = set.bSets[sourceBranchName];
+      if (!br) return null;
+
+      const tw = state.timeWindow;
+      const sp = skillPct(tw);
+      const rowKey = `${setName}|${sourceBranchName}`;
+      const rowMap = BUILD_ROWS[rowKey];
+
+      if (setName === "究极能量") {
+        const awakened = specialAwakenCompute(setName, sourceBranchName, br, tw);
+        if (awakened) return attachShares({ ...awakened, branchName: displayBranchName, sourceBranchName });
+      }
+
+      if (setName === "龙战八荒" && sourceBranchName === "龙帝降临") {
+        return dragonEmperorCompute(displayBranchName, br, tw);
+      }
+
+      const specialDual = specialDualCompute(setName, sourceBranchName, br, tw);
+      if (specialDual) return attachShares({ ...specialDual, branchName: displayBranchName, sourceBranchName });
+
+      const row = typeof rowMap === "number"
+        ? x3Row(rowMap, tw, model?.magicControl ? { magicControlCount: magicControlCount() } : {})
+        : {
+          techMult: (tw === 43 ? G43_OVERRIDES[rowKey] : null) || br.gValue || set.aSet.gValue || 1,
+          totalEffPct: effTotal(br.effects, tw),
+          effects: br.effects || [],
+          oValue: 0
+        };
+
+      if (br.isFate) {
+        const refreshExtra = (row.oValue || 0) * 10;
+        const skillDamage = (sp + refreshExtra) * row.techMult;
+        return attachShares({
+          setName, branchName,
+          techMult: row.techMult,
+          totalEffPct: 0,
+          effects: [],
+          skillDamage,
+          effectDamage: 0,
+          totalDamage: skillDamage,
+          isFate: true,
+          branchName: displayBranchName,
+          sourceBranchName,
+          refreshExtra,
+          adjRefresh: refreshExtra
+        });
+      }
+
+      const base = rowDamage(setName, branchName, row);
+      let skillDamage = base.skillDamage;
+      let effectDamage = base.effectDamage;
+
+      if (br.isCDR && tw === 43) {
+        const y = sourceBranchName === "堕落深渊"
+          ? 1 - 0.3 / 0.95 / 0.815 / 0.85
+          : (br.cdrTotal || 0);
+        skillDamage *= cdrBonus(y, tw);
+      }
+
+      if (br.isTeam) {
+        const modeKey = displayBranchName === "引路人的助手" ? "guideMode" : "successorMode";
+        if (state.globalOptions[modeKey] !== "team") {
+          return attachShares({
+            ...base,
+            branchName: displayBranchName,
+            sourceBranchName,
+            skillDamage,
+            effectDamage: 0,
+            totalDamage: skillDamage
+          });
+        }
+        const boost = br.teamBoost || 1.0;
+        return attachShares({
+          ...base,
+          branchName: displayBranchName,
+          sourceBranchName,
+          skillDamage,
+          effectDamage: 0,
+          totalDamage: skillDamage * boost,
+          isTeam: true,
+          teamBoost: (boost - 1) * 100
+        });
+      }
+
+      const removedExtra = new Set(["龙战八荒|唯战之命", "潜袭暗影|潜行背袭", "群猎美学|孤独的猎人", "群猎美学|引路人的继承者(单人)", "混沌净化|混沌"]);
+      const extraM = removedExtra.has(rowKey) ? 0 : (br.extraM || 0);
+      skillDamage *= (1 + extraM);
+      effectDamage *= (1 + extraM);
+      return attachShares({
+        ...base,
+        branchName: displayBranchName,
+        sourceBranchName,
+        skillDamage,
+        effectDamage,
+        totalDamage: skillDamage + effectDamage
+      });
+    }
+
+    // ============================================================
+    //  生成所有方案并排行
+    // ============================================================
+    function allBuilds() {
+      const r = [];
+      SET_ORDER.forEach(sn => {
+        const set = SETS[sn];
+        if (!set) return;
+        branchModels(sn).forEach(model => {
+          const c = compute(sn, model.key);
+          if (c) r.push(c);
+        });
+      });
+      return r;
+    }
+
+    function ranking() {
+      const builds = allBuilds();
+      const [bsn, bbn] = state.baseSetKey.split("|");
+      const base = builds.find(b => b.setName === bsn && b.branchName === bbn) ||
+        builds.find(b => b.setName === bsn && b.branchName.includes(bbn)) ||
+        builds[0];
+      const bd = base ? base.totalDamage : 1;
+      return builds.map(b => ({ ...b, relStr: bd > 0 ? (b.totalDamage / bd) * 100 : 0 }))
+        .sort((a, b) => b.relStr - a.relStr);
+    }
+
+    // ============================================================
+    //  UI
+    // ============================================================
+    function initBaseSelect() {
+      const sel = $("#baseSet");
+      sel.innerHTML = SET_ORDER.map(sn => {
+        return `<optgroup label="${sn}">${branchModels(sn).map(model =>
+          `<option value="${sn}|${model.key}">${sn} — ${model.title || model.key}</option>`
+        ).join('')}</optgroup>`;
+      }).join('');
+      sel.value = state.baseSetKey;
+    }
+
+    function renderRanking() {
+      const list = ranking();
+      const tbody = $("#rankBody");
+      const cnt = $("#resultCount");
+      cnt.textContent = `共 ${list.length} 个方案`;
+
+      const [bsn, bbn] = state.baseSetKey.split("|");
+      const refTable = EXCEL_REF[state.timeWindow] || {};
+
+      tbody.innerHTML = list.map((item, i) => {
+        const r = i + 1;
+        let rc = "text-slate-400";
+        if (r === 1) rc = "text-goldx font-bold";
+        else if (r === 2) rc = "text-cyanx font-semibold";
+        else if (r === 3) rc = "text-greenx font-semibold";
+
+        const isBase = item.setName === bsn && item.branchName.includes(bbn);
+        const bc = isBase ? "bg-[#1a3a5c] ring-1 ring-inset ring-cyanx/30" : "";
+
+        const refKey = `${item.setName}|${item.branchName}`;
+        const refV = refTable[refKey];
+        const dev = refV != null ? ((item.relStr / 100) - refV) * 100 : null;
+        const ds = dev != null ? `${dev >= 0 ? '+' : ''}${dev.toFixed(2)}%` : '—';
+        const dc = dev != null ? (Math.abs(dev) < 0.5 ? 'text-greenx/60' : 'text-redx/60') : 'text-slate-500';
+
+        const iconUrl = ICONS[item.setName] || '';
+        const star = isBase ? '<span class="text-cyanx ml-1" title="基准">⭐</span>' : '';
+
+        const isSelected = state.selectedKey === `${item.setName}|${item.branchName}`;
+        const sc = isSelected ? "is-selected" : "";
+
+        return `<tr data-key="${item.setName}|${item.branchName}" class="rank-row border-b border-line/40 transition-colors ${bc} ${sc}">
+          <td class="px-4 py-2.5 ${rc}">${r}</td>
+          <td class="px-3 py-2.5 font-medium text-white truncate max-w-[130px]">
+            ${iconUrl ? `<img src="${iconUrl}" class="inline-block w-6 h-6 rounded mr-1.5 align-middle" />` : ''}
+            <span class="align-middle">${item.setName}${star}</span>
+          </td>
+          <td class="px-3 py-2.5 text-slate-300 truncate max-w-[150px]" title="${item.branchName}">${item.branchName}</td>
+          <td class="px-3 py-2.5 text-right font-mono text-xs">${item.techMult.toFixed(4)}</td>
+          <td class="px-3 py-2.5 text-right font-mono text-xs">${item.isFate ? displayPct(item.refreshExtra || 0, 2) : displayPct(item.totalEffPct || item.totalEff || 0, 2)}</td>
+          <td class="px-3 py-2.5 text-right font-mono text-xs">${((item.effectShare || 0) * 100).toFixed(2)}%</td>
+          <td class="px-3 py-2.5 text-right font-mono text-xs">${nf(item.skillDamage)}</td>
+          <td class="px-3 py-2.5 text-right font-mono text-xs">${nf(item.effectDamage)}</td>
+          <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold text-white">${nf(item.totalDamage)}</td>
+          <td class="px-3 py-2.5 text-right font-mono text-sm font-bold text-goldx">${item.relStr.toFixed(2)}%</td>
+          <td class="px-3 py-2.5 text-right font-mono text-xs ${dc}">${ds}</td>
+        </tr>`;
+      }).join('');
+
+      renderBuildPreview(list);
+      renderBranchCards();
+    }
+
+    function selectedBuild(list) {
+      const builds = list || ranking();
+      return builds.find(b => `${b.setName}|${b.branchName}` === state.selectedKey) || builds[0];
+    }
+
+    function renderBuildPreview(list) {
+      const box = $("#buildPreview");
+      if (!box) return;
+      const item = selectedBuild(list);
+      if (!item) {
+        box.innerHTML = '<p class="text-sm text-slate-400">暂无方案</p>';
+        return;
+      }
+      const iconUrl = ICONS[item.setName] || '';
+      const effects = item.effects || [];
+      const effectLines = effects.length ? effects.map((e, i) => {
+        const cnt = e.cnt != null ? e.cnt : hitCount(e.cd || 0, state.timeWindow, e.initialCd);
+        return `<div class="effect-line">
+          <span>特效${i + 1}</span>
+          <b>${nf0(e.pct || 0)}</b>
+          <span>CD ${e.cd || 0}s</span>
+          <span>次数 ${cnt}</span>
+        </div>`;
+      }).join('') : '<div class="effect-line muted">无额外特效条目</div>';
+      const cdrText = item.cdrApplied ? '<span class="tag tag-green">43s CDR已计入</span>' : '';
+      box.innerHTML = `
+        <div class="build-head">
+          ${iconUrl ? `<img src="${iconUrl}" class="build-icon" />` : ''}
+          <div class="min-w-0">
+            <h2>${item.setName}</h2>
+            <p>A套技攻倍率: ${item.techMult.toFixed(4)}</p>
+          </div>
+        </div>
+        <div class="preview-title-row">
+          <strong>${item.branchName}</strong>
+          <span>${pct(item.relStr)}</span>
+        </div>
+        <div class="stat-grid">
+          <div><span>技能伤害</span><b>${nf(item.skillDamage)}</b></div>
+          ${item.isFate
+          ? `<div><span>刷新技能百分比</span><b>${displayPct(item.refreshExtra || 0, 2)}</b></div>`
+          : `<div><span>特效伤害</span><b>${nf(item.effectDamage)}</b></div>
+             <div><span>特效总百分比</span><b>${displayPct(item.totalEffPct || 0, 2)}</b></div>
+             <div><span>特效伤害占比</span><b>${((item.effectShare || 0) * 100).toFixed(2)}%</b></div>`}
+          <div><span>总伤害</span><b>${nf(item.totalDamage)}</b></div>
+        </div>
+        <div class="formula-strip">
+          <span>技攻倍率: ${item.techMult.toFixed(4)}</span>
+          <span>特效伤害占比: ${((item.effectShare || 0) * 100).toFixed(2)}%</span>
+          ${cdrText}
+        </div>
+        <div class="effect-list">${effectLines}</div>`;
+    }
+
+    function renderBranchCards() {
+      const box = $("#branchCards");
+      const count = $("#branchCount");
+      if (!box) return;
+      const ranked = ranking();
+      const [setName] = (state.selectedKey || state.baseSetKey).split("|");
+      const set = SETS[setName] || SETS[SET_ORDER[0]];
+      const branches = branchModels(setName);
+      if (count) count.textContent = `${branches.length} 个`;
+      box.innerHTML = branches.map(model => {
+        const res = ranked.find(item => item.setName === setName && item.branchName === model.key) || compute(setName, model.key);
+        const key = `${setName}|${model.key}`;
+        const active = key === state.selectedKey ? "active" : "";
+        return `<button class="branch-card ${active}" data-key="${key}">
+          <strong>${model.title || model.key}</strong>
+          <span>${res ? pct(res.relStr) : '--'}</span>
+          <small>总伤害 ${res ? nf(res.totalDamage) : '--'}</small>
+        </button>`;
+      }).join('');
+    }
+
+    // 详情页
+    function configAnchor(setName) {
+      const set = SETS[setName];
+      return `config-${set ? set.id : setName}`;
+    }
+
+    function getBranchGroups(setName) {
+      return branchModels(setName).map(model => ({
+        title: model.title || model.key,
+        keys: [model.key],
+        model,
+        note: model.note,
+        condition: model.optionLabel || ""
+      }));
+    }
+
+    function branchConditionLabel(group, branchName) {
+      if (!group || group.keys.length === 1) return "默认配置";
+      let label = branchName.replace(group.title, "");
+      label = label.replace(/^[（(]/, "").replace(/[）)]$/, "");
+      return label || branchName;
+    }
+
+    function miniNumber(n, digits = 2) {
+      return (n || 0).toLocaleString("zh-CN", { maximumFractionDigits: digits });
+    }
+
+    function renderConfigMetric(label, value, tone = "") {
+      return `<div class="config-metric">
+        <span>${label}</span>
+        <b class="${tone}">${value}</b>
+      </div>`;
+    }
+
+    function renderGlobalOptionControl(model) {
+      if (!model || !model.options || !model.optionKey) return "";
+      const value = optionValue(model.optionKey);
+      return `<label class="config-inline-control">
+        <span>${model.optionLabel || "选项"}</span>
+        <select data-role="global-option" data-key="${model.optionKey}">
+          ${model.options.map(([v, label]) => `<option value="${v}" ${v === value ? "selected" : ""}>${label}</option>`).join("")}
+        </select>
+      </label>`;
+    }
+
+    function renderFateLuckControl(setName) {
+      if (setName !== "天命者的气运") return "";
+      const value = state.globalOptions.fateLuck;
+      return `<label class="config-inline-control">
+        <span>运气模型</span>
+        <select data-role="global-option" data-key="fateLuck">
+          <option value="good" ${value === "good" ? "selected" : ""}>好运</option>
+          <option value="mid" ${value === "mid" ? "selected" : ""}>中运</option>
+          <option value="bad" ${value === "bad" ? "selected" : ""}>差运</option>
+        </select>
+      </label>`;
+    }
+
+    function renderMagicControl() {
+      const count = magicControlCount();
+      const max = state.timeWindow * 5 + 1;
+      return `<div class="config-control-block">
+        <div class="config-block-title">
+          <span>触发次数</span>
+          <b>${count} / ${max}</b>
+        </div>
+        <div class="range-input-row">
+          <input type="range" min="0" max="${max}" step="1" value="${count}"
+            class="range" data-role="magic-count" data-set="冥思者的魔力领域" data-branch="魔力操控" />
+          <input type="number" min="0" max="${max}" step="1" value="${count}"
+            class="input" data-role="magic-count" data-set="冥思者的魔力领域" data-branch="魔力操控" />
+        </div>
+      </div>`;
+    }
+
+    function renderDragonControl(setName, branchName, res) {
+      if (setName !== "龙战八荒" || branchName !== "龙帝降临") return "";
+      const seconds = res.burstSeconds || 0;
+      return `<div class="config-control-block">
+        <div class="config-block-title">
+          <span>爆发时间</span>
+          <b>${seconds}s / ${state.timeWindow}s</b>
+        </div>
+        <input type="range" min="0" max="${state.timeWindow}" step="1" value="${seconds}"
+          class="range" data-role="dragon-burst" data-set="${setName}" data-branch="${branchName}" />
+        <div class="config-note-row">
+          <span><em>虚弱倍率</em><b>${(res.normalG || 0).toFixed(4)}</b></span>
+          <span><em>爆发倍率</em><b>${(res.burstG || 0).toFixed(4)}</b></span>
+        </div>
+      </div>`;
+    }
+
+    function renderOverloadControl(setName, branchName) {
+      if (setName !== "究极能量" || branchName !== "超载") return "";
+      const cfg = getSetConfig(setName, branchName);
+      const checked = (key, fallback = false) => (cfg[key] != null ? !!cfg[key] : fallback) ? "checked" : "";
+      return `<div class="config-control-block">
+        <div class="config-block-title">
+          <span>超载选项</span>
+          <b>刷新 / 脱手</b>
+        </div>
+        <div class="check-grid">
+          <label class="check control-check">
+            <input type="checkbox" data-role="overload-toggle" data-key="refreshFirst" data-set="${setName}" data-branch="${branchName}" ${checked("refreshFirst", true)} />
+            刷新一觉
+          </label>
+          <label class="check control-check">
+            <input type="checkbox" data-role="overload-toggle" data-key="refreshSecond" data-set="${setName}" data-branch="${branchName}" ${checked("refreshSecond", true)} />
+            刷新二觉
+          </label>
+          <label class="check control-check">
+            <input type="checkbox" data-role="overload-toggle" data-key="firstDetached" data-set="${setName}" data-branch="${branchName}" ${checked("firstDetached")} />
+            一觉脱手
+          </label>
+          <label class="check control-check">
+            <input type="checkbox" data-role="overload-toggle" data-key="secondDetached" data-set="${setName}" data-branch="${branchName}" ${checked("secondDetached")} />
+            二觉脱手
+          </label>
+        </div>
+      </div>`;
+    }
+
+    function renderVariantNotes(br, res) {
+      const notes = [];
+      if (br.extraM && res.sourceBranchName && !new Set(["唯战之命", "潜行背袭", "孤独的猎人", "引路人的继承者(单人)", "混沌"]).has(res.sourceBranchName)) notes.push(["额外增幅", `+${(br.extraM * 100).toFixed(2)}%`]);
+      if (br.isCDR) {
+        const cdr = res.sourceBranchName === "堕落深渊" ? 1 - 0.3 / 0.95 / 0.815 / 0.85 : (br.cdrTotal || 0);
+        notes.push(["CDR", `${(cdr * 100).toFixed(2)}%`]);
+        if (state.timeWindow === 43 && cdr > 0) notes.push(["折算倍率", cdrBonus(cdr, 43).toFixed(4)]);
+      }
+      if (br.isTeam && res.teamBoost) notes.push(["团队提升", `+${(res.teamBoost || 0).toFixed(2)}%`]);
+      if (br.isFate) notes.push(["运气", fateLuckLabel()]);
+      if (res.isDual) notes.push(["强化占比", `${((res.enhancedRatio || 0) * 100).toFixed(2)}%`]);
+      if (!notes.length) return "";
+      return `<div class="config-note-row">${notes.map(([label, value]) =>
+        `<span><em>${label}</em><b>${value}</b></span>`).join("")}</div>`;
+    }
+
+    function renderDualControl(setName, branchName, br, sourceBranchName = branchName) {
+      const map = BUILD_ROWS[`${setName}|${sourceBranchName}`];
+      if (!br.isDual || !map || typeof map !== "object" || map.normal == null || map.enhanced == null) return "";
+      const cfg = (state.setConfigs[setName] && state.setConfigs[setName][branchName]) || {};
+      const defaultRatio = sourceBranchName === "审判之日"
+        ? (state.timeWindow === 15 ? 1 : 30 / 43)
+        : (x3Cell(map.ratio, state.timeWindow)?.[0] ?? br.enhancedRatio ?? 0.3);
+      const er = cfg.enhancedRatio != null ? cfg.enhancedRatio : defaultRatio;
+      const value = Math.round(er * 100);
+      return `<div class="config-control-block">
+        <div class="config-block-title">
+          <span>强势占比</span>
+          <b>强化 ${value.toFixed(2)}%</b>
+        </div>
+        <input type="range" min="0" max="100" step="5" value="${value}"
+          class="range" data-role="dual" data-set="${setName}" data-branch="${branchName}" />
+      </div>`;
+    }
+
+    function renderAwakenStructure(setName, branchName, br, res) {
+      if (!res.isAwaken) return "";
+      const structureRows = res.structureParts || [
+        { label: "一般技能", damage: res.skillDamage || 0, mult: res.baseG || res.techMult, ratio: res.otherRatio || 0 }
+      ];
+      const controlRows = [
+        { label: "三觉", ratio: res.thirdRatio || 0, type: "third" },
+        { label: "二觉", ratio: res.secondRatio || 0, type: "second" },
+        { label: "一觉", ratio: res.firstRatio || 0, type: "first" }
+      ];
+      return `<div class="structure-block">
+        <div class="config-block-title">
+          <span>结构占比</span>
+          <b>实际伤害结构</b>
+        </div>
+        ${structureRows.map(row => {
+        const share = res.totalDamage > 0 ? ((row.damage || 0) / res.totalDamage) * 100 : 0;
+        const rawLabel = row.ratio != null ? `${((row.ratio || 0) * 100).toFixed(2)}%` : "--";
+        const tags = [
+          row.times && row.times !== 1 ? `×${row.times}` : "",
+          row.penalty && row.penalty !== 1 ? `折损×${row.penalty.toFixed(4)}` : ""
+        ].filter(Boolean).join(" ");
+        const bar = `<div class="structure-bar"><i style="width:${Math.max(0, Math.min(100, share))}%"></i></div>`;
+        return `<div class="structure-row is-fixed">
+            <span>${row.label}</span>
+            <b>${share.toFixed(2)}%</b>
+            <em>${rawLabel}${tags ? ` ${tags}` : ""}</em>
+            <strong>${nf(row.damage || 0)}</strong>
+            ${bar}
+          </div>`;
+      }).join("")}
+      </div>
+      <div class="config-control-block">
+        <div class="config-block-title">
+          <span>原始占比</span>
+          <b>强势占比滑块</b>
+        </div>
+        ${controlRows.map(row => {
+        const pctValue = (row.ratio || 0) * 100;
+        return `<label class="ratio-control-row">
+          <span>${row.label}</span>
+          <b>${pctValue.toFixed(2)}%</b>
+          <input type="range" min="0" max="30" step="1" value="${pctValue}"
+            class="range" data-role="awaken" data-set="${setName}" data-branch="${branchName}" data-type="${row.type}" />
+        </label>`;
+      }).join("")}
+      </div>`;
+    }
+
+    function renderEffectDetails(effects, expectedTotalPct = 0) {
+      const list = effects || [];
+      const actualTotal = effTotal(list, state.timeWindow);
+      const needsSummary = expectedTotalPct > 0 && (list.length === 0 || Math.abs(actualTotal - expectedTotalPct) > 1);
+      if (!list.length && !needsSummary) return "";
+      const rowCount = list.length + (needsSummary ? 1 : 0);
+      return `<details class="effect-details" open>
+        <summary>
+          <span>特效部分</span>
+          <b>${rowCount} 项</b>
+        </summary>
+        <div class="effect-detail-list">
+          ${list.map((e, i) => `<div class="effect-detail-row">
+            <strong>特效${i + 1}${e.initialCd ? "<small>初始CD</small>" : ""}</strong>
+            <span>单次伤害 <b>${miniNumber(e.pct, 2)}</b></span>
+            <span>触发CD <b>${e.cd || 0}s</b></span>
+            <label class="effect-eff-input">效率
+              <span class="percent-input">
+                <input type="number" min="0" max="100" step="1" value="${Math.round(Number(e.playRate ?? 1) * 100)}"
+                  data-role="effect-eff" data-row="${e.rowNo || 0}" data-index="${e.effectIndex || 0}" />
+                <em>%</em>
+              </span>
+            </label>
+            <span>次数 <b>${effectCount(e, state.timeWindow)}</b></span>
+          </div>`).join("")}
+          ${needsSummary ? `<div class="effect-detail-row is-summary">
+            <strong>Excel汇总<small>计入总百分比</small></strong>
+            <span>单次伤害 <b>${miniNumber(expectedTotalPct, 2)}</b></span>
+            <span>触发CD <b>0s</b></span>
+            <span>效率 <b>100.00%</b></span>
+            <span>次数 <b>1</b></span>
+          </div>` : ""}
+        </div>
+      </details>`;
+    }
+
+    function renderVariantBlock(setName, branchName, group) {
+      const set = SETS[setName];
+      const model = group.model || sourceModel(setName, branchName);
+      const sourceBranchName = resolveModelSource(model) || branchName;
+      const br = set.bSets[sourceBranchName];
+      const res = compute(setName, branchName);
+      if (!br || !res) return "";
+      const selected = state.selectedKey === `${setName}|${branchName}`;
+      const conditionLabel = branchConditionLabel(group, branchName);
+      const allEffects = res.effects || [];
+      const metricHtml = res.isFate ? `
+          ${renderConfigMetric("技攻倍率", res.techMult.toFixed(4), "tone-cyan")}
+          ${renderConfigMetric("刷新技能百分比", displayPct(res.refreshExtra || 0, 2), "tone-green")}
+          ${renderConfigMetric("技能伤害", nf(res.skillDamage))}
+          ${renderConfigMetric("总伤害", nf(res.totalDamage), "tone-gold")}
+        ` : `
+          ${renderConfigMetric("技攻倍率", res.techMult.toFixed(4), "tone-cyan")}
+          ${renderConfigMetric("特效伤害占比", `${((res.effectShare || 0) * 100).toFixed(2)}%`)}
+          ${renderConfigMetric("特效总百分比", displayPct(res.totalEffPct || 0, 2), "tone-green")}
+          ${renderConfigMetric("特效伤害", nf(res.effectDamage))}
+          ${renderConfigMetric("总伤害", nf(res.totalDamage), "tone-gold")}
+        `;
+      return `<div class="config-variant ${selected ? "is-selected" : ""}">
+        <div class="variant-head">
+          <div>
+            <span>${group.keys.length > 1 ? (group.condition || "条件") : "分支"}</span>
+            <strong>${model?.title || conditionLabel}</strong>
+            ${model?.note ? `<small>${model.note}</small>` : ""}
+          </div>
+          <button type="button" class="variant-focus" data-role="focus-build" data-key="${setName}|${branchName}"
+            aria-label="设为当前方案" title="设为当前方案">
+            <i data-lucide="crosshair" class="h-3.5 w-3.5"></i>
+          </button>
+        </div>
+        <div class="config-metric-grid">
+          ${metricHtml}
+        </div>
+        ${renderVariantNotes(br, res)}
+        ${renderGlobalOptionControl(model)}
+        ${model?.magicControl ? renderMagicControl() : ""}
+        ${renderDragonControl(setName, branchName, res)}
+        ${renderOverloadControl(setName, branchName)}
+        ${renderDualControl(setName, branchName, br, sourceBranchName)}
+        ${renderAwakenStructure(setName, branchName, br, res)}
+        ${renderEffectDetails(allEffects, res.totalEffPct || 0)}
+      </div>`;
+    }
+
+    function renderBranchConfigCard(setName, group, index) {
+      const variants = group.keys.map(key => compute(setName, key)).filter(Boolean);
+      const best = variants.reduce((acc, item) => !acc || item.totalDamage > acc.totalDamage ? item : acc, null);
+      const variantCount = group.keys.length;
+      return `<article class="config-branch-card">
+        <div class="branch-config-head">
+          <div>
+            <span>B套${index + 1}</span>
+            <h3>${group.title}</h3>
+          </div>
+          <div class="branch-total">
+            <span>总伤害</span>
+            <b>${best ? nf(best.totalDamage) : "--"}</b>
+          </div>
+        </div>
+        ${variantCount > 1 ? `<div class="condition-caption">${group.condition || "条件"}：${group.keys.map(key => branchConditionLabel(group, key)).join(" / ")}</div>` : ""}
+        <div class="variant-stack">
+          ${group.keys.map(key => renderVariantBlock(setName, key, group)).join("")}
+        </div>
+      </article>`;
+    }
+
+    function renderSetConfigSection(setName) {
+      const set = SETS[setName];
+      if (!set) return "";
+      const iconUrl = ICONS[setName] || "";
+      const groups = getBranchGroups(setName);
+      const variants = groups.flatMap(group => group.keys.map(key => compute(setName, key)).filter(Boolean));
+      const best = variants.reduce((acc, item) => !acc || item.totalDamage > acc.totalDamage ? item : acc, null);
+      const baseTechMult = set.aSet.gValue || 1;
+      return `<section id="${configAnchor(setName)}" class="config-set-block">
+        <div class="config-set-head">
+          <div class="config-title">
+            ${iconUrl ? `<img src="${iconUrl}" alt="" />` : `<i data-lucide="package" class="h-5 w-5 text-cyanx"></i>`}
+            <div>
+              <h2>${setName}</h2>
+              <p>A套技攻倍率: ${baseTechMult.toFixed(4)}</p>
+            </div>
+          </div>
+          <div class="config-set-summary">
+            <span>${groups.length} 分支</span>
+            <span>${variants.length} 方案</span>
+            <b>${best ? nf(best.totalDamage) : "--"}</b>
+          </div>
+        </div>
+        ${renderFateLuckControl(setName)}
+        <div class="config-branch-grid">
+          ${groups.map((group, index) => renderBranchConfigCard(setName, group, index)).join("")}
+        </div>
+      </section>`;
+    }
+
+    function renderAllSetConfigs(setName = state.activeConfigSet) {
+      const panel = $("#setConfigPanels");
+      if (!panel) return;
+      const target = SET_ORDER.includes(setName) ? setName : SET_ORDER[0];
+      state.activeConfigSet = target;
+      panel.innerHTML = renderSetConfigSection(target);
+      $$(".set-stab").forEach(btn => btn.classList.toggle("is-active", btn.dataset.set === target));
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderDetailTabs() {
+      const tabs = $("#setSubTabs");
+      if (!SET_ORDER.includes(state.activeConfigSet)) state.activeConfigSet = SET_ORDER[0];
+      tabs.innerHTML = SET_ORDER.map(sn => {
+        const icon = ICONS[sn] || "";
+        return `<button type="button" data-set="${sn}" class="set-stab ${sn === state.activeConfigSet ? "is-active" : ""}">
+          ${icon ? `<img src="${icon}" alt="" />` : ""}
+          <span>${sn}</span>
+        </button>`;
+      }).join("");
+      renderAllSetConfigs();
+    }
+
+    // ============================================================
+    //  EVENTS
+    // ============================================================
+    function bindEvents() {
+      $$(".tab-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          $$(".tab-btn").forEach(b => b.classList.remove("bg-cyanx/10", "text-white"));
+          btn.classList.add("bg-cyanx/10", "text-white");
+          $$("#tab-main, #tab-detail, #tab-about").forEach(el => el.classList.add("hidden"));
+          const t = $(`#tab-${btn.dataset.tab}`);
+          if (t) t.classList.remove("hidden");
+          if (btn.dataset.tab === "detail") renderAllSetConfigs();
+        });
+      });
+
+      $("#timeWindow").addEventListener("change", function () {
+        state.timeWindow = Number(this.value);
+        refresh();
+      });
+
+      $("#baseSet").addEventListener("change", function () {
+        state.baseSetKey = this.value;
+        state.selectedKey = this.value;
+        refresh();
+      });
+
+      $("#effectCoeff").addEventListener("input", function () {
+        state.effectCoeff = Number(this.value) || 10;
+        refresh();
+      });
+
+      $("#openSkillPct").addEventListener("click", function () {
+        $("#skillPct15").value = state.skillPct[15];
+        $("#skillPct43").value = state.skillPct[43];
+        $("#skillPctModal").classList.remove("hidden");
+      });
+
+      $("#skillPctModal").addEventListener("click", function (e) {
+        if (e.target === this || e.target.closest('[data-role="close-skill-pct"]')) {
+          this.classList.add("hidden");
+        }
+        if (e.target.closest('[data-role="reset-skill-pct"]')) {
+          state.skillPct = { ...DEFAULT_SKILL_PCT };
+          $("#skillPct15").value = state.skillPct[15];
+          $("#skillPct43").value = state.skillPct[43];
+          refresh();
+        }
+        if (e.target.closest('[data-role="apply-skill-pct"]')) {
+          state.skillPct[15] = Number($("#skillPct15").value) || DEFAULT_SKILL_PCT[15];
+          state.skillPct[43] = Number($("#skillPct43").value) || DEFAULT_SKILL_PCT[43];
+          this.classList.add("hidden");
+          refresh();
+        }
+      });
+
+      $("#rankBody").addEventListener("click", function (e) {
+        const row = e.target.closest(".rank-row");
+        if (!row) return;
+        state.selectedKey = row.dataset.key;
+        state.activeConfigSet = state.selectedKey.split("|")[0];
+        renderRanking();
+        renderAllSetConfigs();
+      });
+
+      $("#branchCards").addEventListener("click", function (e) {
+        const card = e.target.closest(".branch-card");
+        if (!card) return;
+        state.selectedKey = card.dataset.key;
+        state.activeConfigSet = state.selectedKey.split("|")[0];
+        renderRanking();
+        renderAllSetConfigs();
+      });
+
+      $("#setSubTabs").addEventListener("click", function (e) {
+        const btn = e.target.closest(".set-stab");
+        if (!btn) return;
+        state.activeConfigSet = btn.dataset.set;
+        renderAllSetConfigs();
+      });
+
+      // 委托事件: 滑块 & 下拉
+      $("#setConfigPanels").addEventListener("input", function (e) {
+        const el = e.target;
+        if (el.dataset.role === "magic-count") {
+          setConfigValue(el.dataset.set, el.dataset.branch, "magicCount", Number(el.value) || 0);
+          renderAllSetConfigs();
+          renderRanking();
+        }
+        if (el.dataset.role === "dragon-burst") {
+          setConfigValue(el.dataset.set, el.dataset.branch, "burstSeconds", Number(el.value) || 0);
+          renderAllSetConfigs();
+          renderRanking();
+        }
+        if (el.dataset.role === "dual") {
+          const sn = el.dataset.set, bn = el.dataset.branch;
+          setConfigValue(sn, bn, "enhancedRatio", Number(el.value) / 100);
+          renderAllSetConfigs();
+          renderRanking();
+        }
+        if (el.dataset.role === "awaken") {
+          const sn = el.dataset.set, bn = el.dataset.branch, type = el.dataset.type;
+          setConfigValue(sn, bn, `${type}Ratio${state.timeWindow}`, clampNumber(Number(el.value) / 100, 0, 0.3));
+          renderAllSetConfigs();
+          renderRanking();
+        }
+      });
+
+      $("#setConfigPanels").addEventListener("change", function (e) {
+        const el = e.target;
+        if (el.dataset.role === "global-option") {
+          state.globalOptions[el.dataset.key] = el.value;
+          renderAllSetConfigs();
+          renderRanking();
+        }
+        if (el.dataset.role === "overload-toggle") {
+          setConfigValue(el.dataset.set, el.dataset.branch, el.dataset.key, el.checked);
+          renderAllSetConfigs();
+          renderRanking();
+        }
+        if (el.dataset.role === "magic-count") {
+          setConfigValue(el.dataset.set, el.dataset.branch, "magicCount", Number(el.value) || 0);
+          renderAllSetConfigs();
+          renderRanking();
+        }
+        if (el.dataset.role === "effect-eff") {
+          const key = effectConfigKey(Number(el.dataset.row), Number(el.dataset.index));
+          if (!state.effectOverrides[key]) state.effectOverrides[key] = {};
+          const pctValue = clampNumber(Number(el.value), 0, 100);
+          el.value = pctValue;
+          state.effectOverrides[key].playRate = pctValue / 100;
+          renderAllSetConfigs();
+          renderRanking();
+        }
+      });
+
+      $("#setConfigPanels").addEventListener("click", function (e) {
+        const btn = e.target.closest('[data-role="focus-build"]');
+        if (!btn) return;
+        state.selectedKey = btn.dataset.key;
+        renderAllSetConfigs();
+        renderRanking();
+      });
+    }
+
+    function refresh() {
+      renderRanking();
+      renderAllSetConfigs();
+    }
+
+    function init() {
+      initBaseSelect();
+      renderDetailTabs();
+      renderRanking();
+      bindEvents();
+      document.querySelector('[data-tab="main"]').click();
+    }
+
+    document.addEventListener("DOMContentLoaded", init);
+  </script>
+
+  <style>
+    :root {
+      --panel-bg: rgba(11, 17, 27, .94);
+      --panel-border: #26344a;
+      --accent: #20d9ff;
+      --accent-soft: rgba(32, 217, 255, .12);
+      --gold: #f6c960;
+    }
+
+    body {
+      letter-spacing: 0;
+    }
+
+    .toolbar-panel,
+    .rank-panel,
+    .side-panel {
+      border: 1px solid var(--panel-border);
+      background: linear-gradient(180deg, rgba(16, 23, 34, .98), rgba(8, 13, 22, .98));
+      box-shadow: 0 14px 42px rgba(0, 0, 0, .28);
+    }
+
+    .toolbar-panel,
+    .side-panel {
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    .rank-panel {
+      border-radius: 8px;
+    }
+
+    .field {
+      display: block;
+    }
+
+    .label {
+      margin-bottom: 0.15rem;
+      display: block;
+      font-size: 0.75rem;
+      color: rgb(148 163 184);
+    }
+
+    .select,
+    .input {
+      height: 2.5rem;
+      width: 100%;
+      border-radius: 0.375rem;
+      border: 1px solid #26344a;
+      background: #0b111b;
+      padding: 0 0.75rem;
+      font-size: 0.875rem;
+      color: #f8fafc;
+      outline: none;
+    }
+
+    .select:focus,
+    .input:focus {
+      border-color: #20d9ff;
+    }
+
+    .select-compact {
+      width: auto;
+      min-width: 8.5rem;
+      height: 2.25rem;
+    }
+
+    .model-controls {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding-right: .25rem;
+    }
+
+    .icon-text-btn,
+    .plain-btn,
+    .primary-btn,
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .4rem;
+      height: 2.25rem;
+      border-radius: 6px;
+      border: 1px solid rgba(32, 217, 255, .34);
+      background: rgba(32, 217, 255, .08);
+      padding: 0 .75rem;
+      color: #dbeafe;
+      font-size: .8rem;
+      font-weight: 750;
+    }
+
+    .icon-btn {
+      width: 2.1rem;
+      padding: 0;
+    }
+
+    .primary-btn {
+      border-color: rgba(32, 217, 255, .65);
+      background: rgba(32, 217, 255, .18);
+      color: #fff;
+    }
+
+    .plain-btn {
+      border-color: rgba(148, 163, 184, .28);
+      background: rgba(148, 163, 184, .08);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: grid;
+      place-items: center;
+      background: rgba(3, 7, 13, .72);
+      padding: 1rem;
+    }
+
+    .modal-backdrop.hidden {
+      display: none;
+    }
+
+    .modal-panel {
+      width: min(32rem, 100%);
+      border: 1px solid rgba(38, 52, 74, .95);
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(15, 23, 36, .98), rgba(7, 12, 21, .98));
+      box-shadow: 0 22px 70px rgba(0, 0, 0, .48);
+      padding: 1rem;
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      border-bottom: 1px solid rgba(38, 52, 74, .72);
+      padding-bottom: .8rem;
+    }
+
+    .modal-head h2 {
+      color: #fff;
+      font-weight: 900;
+    }
+
+    .modal-head p {
+      margin-top: .15rem;
+      color: #9bb3cc;
+      font-size: .78rem;
+    }
+
+    .modal-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .75rem;
+      margin-top: .9rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: .5rem;
+      margin-top: 1rem;
+    }
+
+    .input-blue {
+      border-color: rgba(32, 217, 255, .45);
+      background: rgba(32, 217, 255, .16);
+      color: #f8fafc;
+      font-weight: 700;
+    }
+
+    .check {
+      display: flex;
+      height: 2.5rem;
+      align-items: center;
+      gap: 0.5rem;
+      border-radius: 0.375rem;
+      border: 1px solid #26344a;
+      background: #0b111b;
+      padding: 0 0.75rem;
+      font-size: 0.875rem;
+      color: rgb(226 232 240);
+    }
+
+    .check input {
+      accent-color: #20d9ff;
+    }
+
+    .range {
+      width: 100%;
+      accent-color: #20d9ff;
+      height: 1.25rem;
+    }
+
+    #rankTable th {
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+
+    #rankTable tbody tr:hover {
+      background: rgba(32, 217, 255, 0.055);
+    }
+
+    .rank-row {
+      cursor: pointer;
+    }
+
+    .rank-row.is-selected {
+      background: #1b466b;
+      box-shadow: inset 3px 0 0 var(--accent), inset 0 1px 0 rgba(32, 217, 255, .22), inset 0 -1px 0 rgba(32, 217, 255, .22);
+    }
+
+    .config-nav {
+      position: sticky;
+      top: .75rem;
+      z-index: 20;
+      display: flex;
+      gap: .35rem;
+      overflow-x: auto;
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      background: rgba(8, 13, 22, .94);
+      padding: .45rem;
+      box-shadow: 0 12px 34px rgba(0, 0, 0, .28);
+    }
+
+    .config-set-block {
+      scroll-margin-top: 5rem;
+      border-top: 1px solid rgba(38, 52, 74, .9);
+      padding-top: 1rem;
+    }
+
+    .config-set-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: .75rem;
+    }
+
+    .config-title {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+
+    .config-title img {
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 6px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(93, 242, 162, .22));
+    }
+
+    .config-title h2 {
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 900;
+    }
+
+    .config-title p,
+    .config-set-summary span,
+    .branch-total span,
+    .variant-head span,
+    .config-metric span,
+    .condition-caption {
+      color: #9bb3cc;
+      font-size: .72rem;
+    }
+
+    .config-set-summary {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: .45rem;
+      text-align: right;
+    }
+
+    .config-set-summary span,
+    .config-set-summary b {
+      border: 1px solid rgba(38, 52, 74, .9);
+      border-radius: 999px;
+      background: rgba(6, 11, 19, .74);
+      padding: .28rem .55rem;
+      white-space: nowrap;
+    }
+
+    .config-set-summary b {
+      color: var(--gold);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .76rem;
+    }
+
+    .config-branch-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: .75rem;
+    }
+
+    .config-branch-card {
+      min-width: 0;
+      border: 1px solid rgba(38, 52, 74, .95);
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(13, 20, 31, .98), rgba(7, 12, 21, .96));
+      padding: .8rem;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, .2);
+    }
+
+    .branch-config-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: .75rem;
+      border-bottom: 1px solid rgba(38, 52, 74, .72);
+      padding-bottom: .65rem;
+    }
+
+    .branch-config-head h3 {
+      margin-top: .12rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #fff;
+      font-size: .95rem;
+      font-weight: 850;
+    }
+
+    .branch-config-head span {
+      color: var(--accent);
+      font-size: .68rem;
+      font-weight: 700;
+    }
+
+    .branch-total {
+      min-width: 8.2rem;
+      text-align: right;
+    }
+
+    .branch-total b {
+      display: block;
+      margin-top: .12rem;
+      color: var(--gold);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      overflow-wrap: anywhere;
+    }
+
+    .condition-caption {
+      margin-top: .55rem;
+      overflow-wrap: anywhere;
+    }
+
+    .variant-stack {
+      display: grid;
+      gap: .65rem;
+      margin-top: .65rem;
+    }
+
+    .config-variant {
+      border: 1px solid rgba(38, 52, 74, .72);
+      border-radius: 6px;
+      background: rgba(5, 10, 18, .68);
+      padding: .65rem;
+    }
+
+    .config-variant.is-selected {
+      border-color: rgba(32, 217, 255, .72);
+      background: rgba(13, 47, 72, .58);
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .variant-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .6rem;
+      margin-bottom: .55rem;
+    }
+
+    .variant-head strong {
+      display: block;
+      color: #fff;
+      font-size: .86rem;
+      font-weight: 800;
+    }
+
+    .variant-focus {
+      display: grid;
+      width: 1.75rem;
+      height: 1.75rem;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1px solid rgba(32, 217, 255, .32);
+      border-radius: 6px;
+      background: rgba(32, 217, 255, .08);
+      color: var(--accent);
+      transition: background .12s, border-color .12s;
+    }
+
+    .variant-focus:hover {
+      border-color: rgba(32, 217, 255, .72);
+      background: rgba(32, 217, 255, .16);
+    }
+
+    .config-metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .45rem;
+    }
+
+    .config-metric {
+      min-width: 0;
+      border: 1px solid rgba(38, 52, 74, .55);
+      border-radius: 6px;
+      background: rgba(3, 8, 15, .55);
+      padding: .45rem .5rem;
+    }
+
+    .config-metric b {
+      display: block;
+      margin-top: .18rem;
+      overflow-wrap: anywhere;
+      color: #fff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .76rem;
+    }
+
+    .config-metric b.tone-cyan {
+      color: var(--accent);
+    }
+
+    .config-metric b.tone-green {
+      color: var(--greenx);
+    }
+
+    .config-metric b.tone-gold {
+      color: var(--gold);
+    }
+
+    .config-note-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35rem;
+      margin-top: .55rem;
+    }
+
+    .config-note-row span {
+      display: inline-flex;
+      gap: .3rem;
+      align-items: center;
+      border: 1px solid rgba(32, 217, 255, .18);
+      border-radius: 999px;
+      background: rgba(32, 217, 255, .07);
+      padding: .2rem .45rem;
+      font-size: .68rem;
+    }
+
+    .config-note-row em {
+      color: #9bb3cc;
+      font-style: normal;
+    }
+
+    .config-note-row b {
+      color: var(--greenx);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .config-inline-control {
+      display: grid;
+      grid-template-columns: minmax(4rem, .6fr) minmax(0, 1fr);
+      align-items: center;
+      gap: .55rem;
+      margin-top: .65rem;
+      border-top: 1px solid rgba(38, 52, 74, .62);
+      padding-top: .6rem;
+      color: #9bb3cc;
+      font-size: .72rem;
+    }
+
+    .config-inline-control select,
+    .effect-eff-input input,
+    .range-input-row .input {
+      height: 2rem;
+      border-radius: 6px;
+      border: 1px solid rgba(38, 52, 74, .9);
+      background: #0b111b;
+      color: #fff;
+      padding: 0 .55rem;
+      outline: none;
+    }
+
+    .range-input-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 4.8rem;
+      gap: .55rem;
+      align-items: center;
+    }
+
+    .control-check {
+      margin-top: .65rem;
+      height: 2.25rem;
+    }
+
+    .check-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .45rem;
+      margin-top: .45rem;
+    }
+
+    .check-grid .control-check {
+      margin-top: 0;
+      min-width: 0;
+    }
+
+    .ratio-control-row {
+      display: grid;
+      grid-template-columns: 3.2rem 4.4rem minmax(0, 1fr);
+      align-items: center;
+      gap: .45rem;
+      margin-top: .45rem;
+      color: #dbeafe;
+      font-size: .72rem;
+    }
+
+    .ratio-control-row b {
+      color: var(--gold);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      text-align: right;
+    }
+
+    .config-control-block,
+    .structure-block,
+    .effect-details {
+      margin-top: .65rem;
+      border-top: 1px solid rgba(38, 52, 74, .62);
+      padding-top: .6rem;
+    }
+
+    .config-block-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: .75rem;
+      margin-bottom: .35rem;
+      font-size: .72rem;
+    }
+
+    .config-block-title span {
+      color: #dbeafe;
+      font-weight: 800;
+    }
+
+    .config-block-title b {
+      color: var(--gold);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .structure-row {
+      display: grid;
+      grid-template-columns: minmax(3.4rem, .75fr) minmax(4.6rem, .85fr) 2.5rem minmax(5.8rem, 1fr);
+      gap: .45rem;
+      align-items: center;
+      margin-top: .45rem;
+      color: #dbeafe;
+      font-size: .72rem;
+    }
+
+    .structure-row b,
+    .structure-row em,
+    .structure-row strong {
+      color: #fff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-style: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .structure-row em {
+      color: var(--greenx);
+      text-align: right;
+    }
+
+    .structure-row strong {
+      color: var(--gold);
+      text-align: right;
+    }
+
+    .structure-row .range,
+    .structure-bar {
+      grid-column: 1 / -1;
+    }
+
+    .structure-bar {
+      height: .42rem;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, .22);
+    }
+
+    .structure-bar i {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #20d9ff, #5df2a2);
+    }
+
+    .effect-details summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      color: #dbeafe;
+      font-size: .72rem;
+      font-weight: 800;
+    }
+
+    .effect-details summary::marker {
+      content: "";
+    }
+
+    .effect-details summary b {
+      color: var(--accent);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .effect-detail-list {
+      display: grid;
+      gap: .35rem;
+      margin-top: .45rem;
+    }
+
+    .effect-detail-row {
+      display: grid;
+      grid-template-columns: minmax(3.5rem, .8fr) repeat(2, minmax(4.6rem, 1fr));
+      gap: .35rem .5rem;
+      border-bottom: 1px solid rgba(38, 52, 74, .38);
+      padding-bottom: .4rem;
+      color: #9bb3cc;
+      font-size: .68rem;
+    }
+
+    .effect-detail-row:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .effect-detail-row.is-summary {
+      border-color: rgba(246, 201, 96, .34);
+      color: #dbeafe;
+    }
+
+    .effect-detail-row strong {
+      color: #fff;
+    }
+
+    .effect-detail-row small {
+      display: block;
+      margin-top: .1rem;
+      color: var(--gold);
+      font-size: .62rem;
+      font-weight: 700;
+    }
+
+    .effect-detail-row b {
+      color: #fff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .effect-eff-input {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      color: #9bb3cc;
+    }
+
+    .effect-eff-input input {
+      width: 4.2rem;
+      height: 1.8rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .percent-input {
+      display: inline-flex;
+      align-items: center;
+      overflow: hidden;
+      border-radius: 6px;
+      border: 1px solid rgba(38, 52, 74, .9);
+      background: #0b111b;
+    }
+
+    .percent-input input {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      text-align: right;
+    }
+
+    .percent-input em {
+      padding-right: .45rem;
+      color: var(--accent);
+      font-style: normal;
+      font-weight: 800;
+    }
+
+    .build-head {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      border-bottom: 1px solid rgba(38, 52, 74, .8);
+      padding-bottom: .85rem;
+    }
+
+    .build-icon {
+      width: 2.4rem;
+      height: 2.4rem;
+      border-radius: 6px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(93, 242, 162, .25));
+    }
+
+    .build-head h2 {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 1rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .build-head p {
+      margin-top: .1rem;
+      font-size: .75rem;
+      color: #9bb3cc;
+    }
+
+    .preview-title-row {
+      margin-top: .9rem;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .preview-title-row strong {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #fff;
+      font-size: .95rem;
+    }
+
+    .preview-title-row span {
+      color: var(--gold);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-weight: 900;
+    }
+
+    .stat-grid {
+      margin-top: .85rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .6rem;
+    }
+
+    .stat-grid div {
+      min-width: 0;
+      border: 1px solid rgba(38, 52, 74, .78);
+      background: rgba(6, 11, 19, .7);
+      border-radius: 6px;
+      padding: .65rem .7rem;
+    }
+
+    .stat-grid span,
+    .formula-strip span,
+    .effect-line span {
+      color: #9bb3cc;
+      font-size: .7rem;
+    }
+
+    .stat-grid b {
+      margin-top: .25rem;
+      display: block;
+      overflow-wrap: anywhere;
+      color: #fff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .8rem;
+    }
+
+    .formula-strip {
+      margin-top: .8rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .45rem;
+    }
+
+    .formula-strip span,
+    .tag {
+      border: 1px solid rgba(32, 217, 255, .22);
+      background: rgba(32, 217, 255, .08);
+      border-radius: 999px;
+      padding: .25rem .5rem;
+    }
+
+    .tag-green {
+      border-color: rgba(93, 242, 162, .3);
+      background: rgba(93, 242, 162, .1);
+      color: #5df2a2;
+    }
+
+    .effect-list {
+      margin-top: .8rem;
+      display: grid;
+      gap: .4rem;
+    }
+
+    .effect-line {
+      display: grid;
+      grid-template-columns: minmax(3.2rem, .8fr) minmax(4.6rem, 1fr) minmax(3.8rem, .8fr) minmax(3.5rem, .7fr);
+      gap: .45rem;
+      align-items: center;
+      border-bottom: 1px solid rgba(38, 52, 74, .45);
+      padding-bottom: .35rem;
+      font-size: .72rem;
+    }
+
+    .effect-line b {
+      color: #fff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .effect-line.muted {
+      display: block;
+      color: #64748b;
+      border-bottom: 0;
+    }
+
+    .branch-card-grid {
+      display: grid;
+      gap: .6rem;
+    }
+
+    .branch-card {
+      width: 100%;
+      border: 1px solid rgba(38, 52, 74, .9);
+      background: rgba(7, 12, 21, .82);
+      border-radius: 6px;
+      padding: .75rem;
+      text-align: left;
+      transition: border-color .12s, background .12s, transform .12s;
+    }
+
+    .branch-card:hover {
+      border-color: rgba(32, 217, 255, .55);
+      background: rgba(11, 28, 44, .9);
+    }
+
+    .branch-card.active {
+      border-color: rgba(32, 217, 255, .8);
+      background: #12324f;
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .branch-card strong {
+      display: block;
+      color: #fff;
+      font-size: .86rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .branch-card span {
+      margin-top: .25rem;
+      display: block;
+      color: var(--gold);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-weight: 900;
+    }
+
+    .branch-card small {
+      margin-top: .15rem;
+      display: block;
+      color: #9bb3cc;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .set-stab {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      min-width: max-content;
+      border-radius: 6px;
+      padding: .45rem .65rem;
+      color: #9bb3cc;
+      font-size: .78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+
+    .set-stab img {
+      width: 1rem;
+      height: 1rem;
+      border-radius: 4px;
+      object-fit: contain;
+    }
+
+    .set-stab:hover,
+    .set-stab.is-active {
+      background: rgba(32, 217, 255, .12);
+      color: #fff;
+    }
+
+    .tab-btn {
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+
+    @media (max-width: 1200px) {
+      .config-branch-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .config-set-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .config-set-summary {
+        justify-content: flex-start;
+        text-align: left;
+      }
+
+      .config-branch-grid,
+      .config-metric-grid,
+      .modal-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .model-controls,
+      .modal-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .range-input-row,
+      .ratio-control-row,
+      .config-inline-control {
+        grid-template-columns: 1fr;
+      }
+
+      .branch-total {
+        min-width: 6.5rem;
+      }
+
+      .effect-detail-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .tab-btn:hover {
+      background: rgba(32, 217, 255, 0.05);
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #0b111b;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #26344a;
+      border-radius: 3px;
+    }
+  </style>
+</body>
+
+</html>
