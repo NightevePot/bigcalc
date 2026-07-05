@@ -71,9 +71,30 @@
 
       <!-- ==================== Tab Content Panels ==================== -->
       <section id="tab-ranking" class="tab-panel mt-4">
-        <div class="rounded-lg border border-line bg-panel/80 p-8 text-center">
-          <i data-lucide="bar-chart-3" class="mx-auto h-10 w-10 text-cyanx/50"></i>
-          <p class="mt-3 text-slate-400">方案排行 — 对比方案结果将在此展示</p>
+        <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_430px]">
+          <!-- ===== Left: Ranking List ===== -->
+          <div class="rounded-lg border border-line bg-panel/80">
+            <div class="flex items-center justify-between border-b border-line px-5 py-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="list-ordered" class="h-5 w-5 text-cyanx"></i>
+                <span class="font-medium text-white">方案排行</span>
+              </div>
+              <span class="text-xs text-slate-500">点击方案查看详情</span>
+            </div>
+            <div class="p-5">
+              <p class="text-sm text-slate-500">排行条目将在此列出（待实现）</p>
+            </div>
+          </div>
+          <!-- ===== Right: Detail Panel ===== -->
+          <div class="rounded-lg border border-line bg-panel/80">
+            <div class="flex items-center gap-2 border-b border-line px-5 py-3">
+              <i data-lucide="settings-2" class="h-5 w-5 text-goldx"></i>
+              <span class="font-medium text-white">装备细节</span>
+            </div>
+            <div class="p-5">
+              <p class="text-sm text-slate-500">选中方案后，装备快捷设定在此显示（待实现）</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -124,6 +145,8 @@
         panels.forEach(panel => {
           panel.classList.toggle("hidden", panel.id !== "tab-" + target);
         });
+        // Re-render icons for newly visible panel
+        lucide.createIcons();
       }
 
       tabs.forEach(btn => {
