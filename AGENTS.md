@@ -1,4 +1,4 @@
-# BigCalcs Project Notes
+﻿# BigCalcs Project Notes
 
 This file is a durable knowledge note for Codex when working on this project.
 
@@ -67,6 +67,7 @@ modifier = {
   target_selector,
   branch_scope,
   condition,
+  tags,
   visibility_mode
 }
 ```
@@ -79,11 +80,77 @@ modifier = {
   range, a tag, all equipment effects, or one equipment effect.
 - `branch_scope`: skill branch, equipment-effect branch, or both.
 - `condition`: optional trigger rule.
+- `tags`: descriptive labels used for filtering, UI grouping, search,
+  explanation, and sometimes target/condition matching. Tags do not directly
+  change damage unless a modifier/rule explicitly reads them.
 - `visibility_mode`: normal, advanced, or admin.
 
 The final calculation is built by collecting all modifiers from the active
 source areas, routing them into damage zones, applying target selectors, and
 then summing the resulting skill/effect components.
+
+### Tag System（标签系统）
+
+Equipment and rules should carry tags. Tags are metadata, and one item can have
+multiple tags at the same time.
+
+Tags may appear on:
+
+- `equipment_unit`: describes the whole equipment item.
+- `branch` or `variant`: describes a specific set/weapon branch.
+- `equipment_effect`: describes one effect attack component.
+- `modifier`: describes one stat line or rule.
+- `solution`: inherited/aggregated tags from all active equipment, branches,
+  effects, and modifiers.
+
+Current tag vocabulary:
+
+```text
+type_tags = [
+  "武器",
+  "套装",
+  "国服特色"
+]
+
+damage_tags = [
+  "CD",
+  "刷新",
+  "特效",
+  "特化"
+]
+```
+
+Tagging rules:
+
+- If the item is a weapon, add `武器`.
+- If the item is a set, add `套装`.
+- If the item is a China-server exclusive/custom feature, add `国服特色`.
+- If the item has cooldown reduction, cooldown recovery, or cooldown-altering
+  lines, add `CD`.
+- If the item has skill refresh/reset behavior, add `刷新`.
+- If the item has equipment special-effect attack components, add `特效`.
+- If the item specializes a skill, level range, skill group, or named skill,
+  add `特化`.
+
+Tags are not mutually exclusive. Example:
+
+```text
+equipment_unit.tags = ["套装", "CD", "特效"]
+modifier.tags = ["特化"]
+equipment_effect.tags = ["特效"]
+```
+
+Use tags for:
+
+- filtering equipment lists;
+- explaining why a solution behaves differently;
+- grouping ranking results;
+- matching broad rules such as "all 特化 entries";
+- deciding which advanced controls should be shown.
+
+Do not use tags as a replacement for `damage_zone`, `target_selector`, or
+`branch_scope`. For example, `特效` means "this item has an effect component",
+but the effect still needs an explicit equipment-effect entry and branch scope.
 
 ### Equipment Base Chassis（装备基础底子）
 
@@ -116,6 +183,7 @@ equipment_unit = {
   name: "龙战八荒",
   type: "armor_set" | "weapon" | "accessory",
   inherits: "115_epic_chassis",
+  tags: ["套装", "特效"],
 
   // 套装/武器额外技攻（mutually multiplicative with chassis skill_attack_base）
   extra_skill_attack: 0.4396,   // Example: +43.96%
@@ -282,8 +350,18 @@ skill_i = single_percent_i × trigger_count_i × efficiency_i
 ```
 
 - Skill data entry panel is **enabled**.
+- Character/class preset selection and "edit class data" controls are enabled.
 - Global percentage input is **disabled** (ALLSKILLS is derived, not entered).
 - Suitable for class-specific deep analysis and precise damage research.
+
+Expert mode must use `total_count_i`, not a raw formula-only `trigger_count_i`,
+when calculating each skill. The cooldown formula produces only the normal cast
+upper limit and default input value. The final count is:
+
+```text
+total_count_i = base_count_i + refresh_count_i
+skill_i = single_percent_i * total_count_i * efficiency_i
+```
 
 ### Coarse Mode（粗放模式，ifExpert = 0）
 
@@ -296,7 +374,19 @@ skill_i = ALLSKILLS × share_i
 ```
 
 - Skill data entry panel is **disabled** (data is protected, read-only).
+- Character/class preset selection and "edit class data" controls are disabled.
 - Global percentage input is **enabled**.
+- The character damage-base preview reads directly from the active time-window
+  global value; no individual skills are enabled in the user-facing calculation.
+- Refresh behavior is not mapped to individual skills in coarse mode. It is
+  entered as `refresh_skill_percent` and added directly to the global skill
+  base:
+
+```text
+ALLSKILLS = preset_input + refresh_skill_percent
+```
+
+Example: `1,500,000 + 80,000 = 1,580,000`.
 - Purpose: normalize skill profiles across classes, providing a rough strength
   analysis focused on equipment effects rather than class-specific skill data.
 
@@ -310,30 +400,194 @@ actions with animation and damage distribution over time."
 
 ```text
 skill_entry = {
-  name: "崩山击",
-  single_percent: 4500,         // 单次等效百分比（含等级/被动/VP 强化/施放数）
-  cooldown: 8,                  // CD（秒）
+  display_name: "崩山击",        // 合并展示名
+  name: "崩山击",                // 计算条目名，可含形态/括号提示
+  variant_label: null,          // 例如 "不可抓取"、"可抓取"、"VP2-血气连携"
+  learn_level: 10,              // 技能区间/学习等级（匹配 10/20/75/80 级技能词条）
+  skill_level: 58,              // 当前技能等级，仅作为技能模板数据保留
+  percent_input: "501204%",     // UI 展示和输入尽量保留百分比文本
+  single_percent: 5012.04,      // 内部计算小数；501204% -> 5012.04
+  cooldown: 4,                  // 原始 CD（秒）
   efficiency: 1.0,              // 效率（默认 100%）
-  level: 35,                    // 技能等级（匹配 level-range skill attack）
   tags: ["转职技能", "出血"],    // 标签（匹配 skill-specific bonuses）
   vp: 0,                        // VP 系统：0=不选, 1=模式1, 2=模式2
   vpEnhance: 0,                 // VP 强化：0=不强化, 1=+55%伤害(3技能), 2=+38%伤害且CD-15%(3技能)
 
   // 衍生
-  // trigger_count = int(time_window / cooldown) + 1
-  // (vpEnhance=2 时 cooldown 实际值为 cooldown × 0.85)
+  // base_count_limit = int(time_window / final_cooldown) + max_stack_count
+  // max_stack_count 默认为 1；充能堆栈技能使用 charge_stack.max_stacks
+  // (vpEnhance=2 时 cooldown 实际值为 cooldown × 0.85；
+  //  充能堆栈技能的 recharge_cooldown 也要 × 0.85)
 }
 ```
 
+### Class Skill Table Reading Rules（职业技能表读取规则）
+
+When reading a class skill table, prioritize these fields:
+
+- Skill interval / skill section: the skill's learn-level bucket, such as
+  `80`, `75`, or `45`. This is the value used to match equipment lines like
+  `80 级技能伤害 +40%`. Do not confuse it with the current skill level (`Lv`).
+- Skill name: the main identity of the skill.
+- Equivalent percent: the base damage value for that skill template before
+  equipment and external multipliers. Keep the UI/input format as percent text
+  when possible, such as `18913133%`, and convert internally to decimal
+  `189131.33`.
+- Original cooldown: the skill's base cooldown before cooldown reduction,
+  cooldown recovery, VP enhancement, or other modifiers.
+
+Name parsing rules:
+
+- If the skill name has parentheses, treat the text inside parentheses as a
+  variant/hint label, not as a completely unrelated skill. For example,
+  `噬魂之手(不可抓取)` and `噬魂之手(可抓取)` share the display skill
+  `噬魂之手`, with two calculation variants.
+- The display output may merge these variants under the same display skill, but
+  expert-mode calculation should preserve the variants when their percent,
+  cooldown, target rules, or conditions differ.
+
+VP mode rules:
+
+- VP entries in a skill table are usually alternate modes of an existing skill,
+  not free extra skills. For example:
+
+```text
+浴血之怒        -> VP2-血气连携(x2)
+崩山裂地斩      -> VP2-万钧之势(x2)
+```
+
+- A modifier targeting the original display skill should apply to the active VP
+  variant by default unless a rule explicitly excludes that variant.
+- UI can show one skill row with a VP selector, while the engine stores normal
+  and VP variants as separate calculation entries.
+
+Charge-stack skills:
+
+- Some VP modes convert a normal single-cast skill into a charge-stack skill.
+  The 75 VP2 and 45 VP2 examples follow this pattern.
+- Example: the normal 75 skill has `single_percent = 4545841%` and
+  `cooldown = 40s`. Its VP2 form has `single_percent = 2272920%` and
+  `cooldown = 20s`, which is essentially half damage and half cooldown with a
+  maximum stack count of `2`.
+- The gameplay meaning is efficiency and scheduling, not a loss of opening
+  burst. At battle start, a full 2-stack VP2 skill can be cast twice
+  immediately, producing roughly the same opening total as the normal single
+  cast; afterwards it recovers one stack every recharge cooldown and caps at
+  the stack limit.
+- In the count formula, the `+1` used by normal skills means "one available
+  opening cast". For charge-stack skills, replace it with the maximum stack
+  count. In other words, a 2-stack VP2 skill starts from `+2`, not `+1`.
+- Model these as skill variants with charge parameters:
+
+```text
+charge_stack = {
+  enabled: true,
+  max_stacks: 2,
+  recharge_cooldown: 20,
+  initial_stacks: 2
+}
+```
+
+- In expert mode, charge-stack skills still feed into the count model, but
+  their count limit should use max stacks and final recharge cooldown. In
+  coarse mode, their contribution can be represented by the chosen skill
+  template's total percent/share.
+
+### Count Model & Refresh Rules
+
+Skill counts are split into two parts:
+
+```text
+total_count = base_count + refresh_count
+```
+
+- `base_count_limit`: the maximum normal cast count derived from time window and
+  final cooldown.
+- `base_count`: the actual normal cast count. It defaults to
+  `base_count_limit`, can be reduced by the user/preset, and must be clamped to
+  `0 <= base_count <= base_count_limit`.
+- `refresh_count`: extra casts granted by refresh/reset rules. It must be
+  non-negative and is added after normal count clamping.
+- `total_count`: the actual count used in expert-mode skill calculation.
+
+Normal count upper-limit formula:
+
+```text
+final_cooldown = base_cooldown * cooldown_multiplier
+base_count_limit = int(time_window / final_cooldown) + 1
+base_count = clamp(user_base_count ?? base_count_limit, 0, base_count_limit)
+total_count = base_count + refresh_count
+```
+
+Example:
+
+```text
+base_cooldown = 40s
+cooldown_reduction = 34.2%
+final_cooldown = 40 * (1 - 0.342) = 26.32s
+time_window = 43s
+base_count_limit = int(43 / 26.32) + 1 = 2
+
+base_count may be 2, 1, or 0.
+If the skill is refreshed once, refresh_count = 1.
+Maximum total_count = 2 + 1 = 3.
+```
+
+Charge-stack upper-limit formula:
+
+```text
+final_recharge_cooldown = recharge_cooldown * cooldown_multiplier
+base_count_limit = int(time_window / final_recharge_cooldown) + max_stacks
+```
+
+For non-stack skills, `max_stacks = 1`, so this collapses to the normal
+`int(time_window / final_cooldown) + 1` formula. For a 2-stack VP2 skill,
+`max_stacks = 2`. If that VP2 skill also selects `vpEnhance = 2`, apply the
+breakthrough cooldown multiplier to the recharge cooldown before global CD. For
+example, with a 20s recharge and 40.8% final global CD:
+
+```text
+final_recharge_cooldown = 20 * 0.85 * (1 - 0.408) = 10.064s ≈ 10.1s
+```
+
+Refresh rules should be represented explicitly, not inferred only from tags:
+
+```text
+refresh_rule = {
+  source_area,
+  target_selector,
+  refresh_count,
+  condition,
+  tags: ["刷新"]
+}
+```
+
+- `target_selector` may point to a named skill, display-level skill group,
+  skill component, level range, or tag.
+- If a refresh rule targets a display-level skill that has components, it
+  cascades to those components unless a component has an explicit exclusion.
+- A refresh-tagged equipment line must still provide a concrete refresh rule
+  before it changes skill counts.
+- Equipment special effects do not support refresh. They may use the same count
+  structure for consistency, but their `refresh_count` is always `0`.
+
 - `vp` replaces the old talisman/rune system. Each skill can independently
   select VP mode 0, 1, or 2.
-- `vpEnhance` grants a bonus to up to 3 selected skills:
-  - `1` → `+55%` damage (applied as a skill-specific multiplier on `single_percent`).
-  - `2` → `+38%` damage + cooldown reduced by `15%`.
-  - `0` → no enhancement.
-user-facing UI typically shows aggregated skill groups (e.g., "觉醒技能" +
-"80 级技能" + "其他技能"), while the engine can expand to individual entries
-for complex analysis.
+- `vpEnhance` / VP breakthrough is a skill-level option. At most 3 skills may
+  have a nonzero breakthrough at the same time. Switching one already-selected
+  skill between breakthrough modes does not consume an extra slot.
+  - `0` → no breakthrough.
+  - `1` → `+55%` skill attack, applied as `single_percent × 1.55`.
+  - `2` → `+38%` skill attack and `-15%` cooldown, applied as
+    `single_percent × 1.38` and `cooldown × 0.85`. For charge-stack skill
+    variants, `recharge_cooldown` also receives this `× 0.85`.
+- Current Berserker UI defaults: skills at learn level 30 and below are not
+  enabled by default; the 50-level awakening is also off by default; 75, 80,
+  and 70-level skills default to VP breakthrough `+55%`. This is a preset/UI
+  default, not a universal formula rule.
+- The user-facing UI typically shows aggregated skill groups (e.g., "觉醒技能"
+  + "80 级技能" + "其他技能"), while the engine can expand to individual
+  entries for complex analysis.
 
 ### Hierarchical Display
 
@@ -370,6 +624,10 @@ When `ifExpert = 0`, skill data follows a preset template:
 ```text
 coarse_skills = {
   ALLSKILLS: 85000,             // 用户或系统预设的全局技能百分比总和
+  time_window_values: {
+    15: "75500000%",
+    43: "15100000%"
+  },
   shares: [
     { name: "觉醒技能",       share: 0.18 },
     { name: "80 级技能",      share: 0.12 },
@@ -382,6 +640,9 @@ coarse_skills = {
 - `ALLSKILLS` is a single numeric input — the total skill percent across all
   entries, representing the character's overall skill output before equipment
   modifiers.
+- Current default coarse values are `75500000%` for 15s and `15100000%` for
+  43s. UI should display and accept the percent-style values directly; internal
+  calculation converts them to decimal by dividing by 100.
 - `shares` define how ALLSKILLS is distributed into individual skill entries.
   The sum of all shares must equal 1.0.
 - Each skill entry's base value is derived as `skill_i = ALLSKILLS × share_i`.
@@ -430,6 +691,17 @@ Conditional items such as attack-speed shoes or tiered set effects usually deter
 
 Each equipment unit may have multiple special effects. Every effect is calculated
 independently through the effect branch, then summed.
+
+Equipment effects use the same count vocabulary where useful, but do not receive
+refresh rules:
+
+```text
+effect_total_count = effect_base_count + effect_refresh_count
+effect_refresh_count = 0
+```
+
+In other words, effect counts can be calculated or manually entered, but cannot
+be increased by skill refresh/reset effects.
 
 ### Effect Parameters
 
@@ -506,6 +778,80 @@ common_effect_coefficient =
 DNF's cooldown reduction system is multiplicative across all sources. Each CD
 reduction source contributes independently via multiplication, with a hard cap
 of 70% total reduction.
+
+### Global CD Scope（全局 CD 作用域）
+
+When a line is described as "global CD" in normal discussion, treat it as
+applying to non-awakening skills by default, not literally every skill.
+
+Awakening skills are identified by their skill interval / learn level:
+
+```text
+awakening_learn_levels = [50, 85, 100]
+is_awakening_skill = skill.learn_level in awakening_learn_levels
+```
+
+So the default target selector for a global cooldown modifier is:
+
+```text
+target_selector = all_skills where learn_level not in [50, 85, 100]
+```
+
+For Berserker, the awakening skills are:
+
+```text
+50  魔狱血刹
+85  血魔·弑天
+100 血魔极道：灭世
+```
+
+These skills should be excluded from common global cooldown reduction / cooldown
+recovery calculations unless an item or rule explicitly says that it affects
+awakening skills too.
+
+Global CD can come from multiple source areas, including equipment lines,
+assumption presets, and class passives. These sources multiply with each other
+before the 70% cap is applied:
+
+```text
+global_cd_multiplier =
+  product(1 - global_cd_source_i)
+
+global_cd_reduction =
+  min(1 - global_cd_multiplier, 0.70)
+```
+
+Example:
+
+```text
+5% 宠物技能
+15% 右槽通用
+18.5% 誓约通用
+10% 狂战士职业全局 CD 被动
+
+global_cd_reduction =
+  1 - 0.95 * 0.85 * 0.815 * 0.90
+  = 40.8%
+```
+
+UI distinction:
+
+- The advanced settings "global CD" block displays only the records edited in
+  that block. In the example above, the advanced block title should display
+  `高级全局CD：34.2%` for `5%`, `15%`, and `18.5%`.
+- The character preset read-only `全局CD` field displays the final global CD
+  after adding class passive sources. For Berserker, it displays `40.8%` after
+  multiplying the advanced block result with the class passive `10%`.
+
+The class data panel may expose an "apply CD" toggle. When it is off, the skill
+table displays and counts from original cooldowns. When it is on, non-awakening
+skills display and count from cooldowns after global CD. Awakening skills still
+keep their original cooldown unless a rule explicitly includes them.
+
+Expert-mode count calculation must apply cooldown modifiers only after resolving
+this target scope. Coarse-mode CDR-to-damage approximations should also apply
+their benefit only to the non-awakening skill share unless the scenario
+explicitly includes awakening skills.
 
 ### Cooldown Multiplier Formula
 

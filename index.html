@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 
 <head>
@@ -50,7 +50,7 @@
       </header>
 
       <!-- ==================== Tab Navigation ==================== -->
-      <nav class="mt-4 flex gap-1 rounded-lg border border-line bg-panel/90 p-1.5">
+      <nav class="mt-4 flex flex-wrap gap-1 rounded-lg border border-line bg-panel/90 p-1.5">
         <button data-tab="ranking"
           class="tab-btn flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-medium text-slate-300 hover:text-white active">
           <i data-lucide="bar-chart-3" class="h-4 w-4"></i>方案排行
@@ -66,6 +66,10 @@
         <button data-tab="equipment"
           class="tab-btn flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-medium text-slate-300 hover:text-white">
           <i data-lucide="database" class="h-4 w-4"></i>基础装备库
+        </button>
+        <button data-tab="advanced"
+          class="tab-btn flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-medium text-slate-300 hover:text-white">
+          <i data-lucide="settings-2" class="h-4 w-4"></i>高级
         </button>
       </nav>
 
@@ -109,7 +113,23 @@
                 <span class="font-medium text-white">角色基础属性</span>
                 <span class="text-xs text-slate-500">Character Base Area</span>
               </div>
-              <div class="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div class="space-y-4 p-5">
+                <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+                  <label class="flex flex-col gap-1.5">
+                    <span class="text-xs text-slate-400">职业预设</span>
+                    <select id="classPreset"
+                      disabled
+                      class="rounded-md border border-line bg-panel2 px-3 py-2 text-sm text-white outline-none focus:border-greenx/60 disabled:cursor-not-allowed disabled:opacity-50">
+                      <option value="berserker">狂战士</option>
+                    </select>
+                  </label>
+                  <button id="editClassData" type="button" disabled
+                    class="inline-flex items-center justify-center gap-2 self-end rounded-md border border-cyanx/50 bg-cyanx/10 px-4 py-2 text-sm font-medium text-cyanx transition hover:bg-cyanx/15 disabled:cursor-not-allowed disabled:border-line disabled:bg-panel2 disabled:text-slate-500">
+                    <i data-lucide="table-properties" class="h-4 w-4"></i>
+                    编辑职业数据
+                  </button>
+                </div>
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <label class="flex flex-col gap-1.5">
                   <span class="text-xs text-slate-400">力智</span>
                   <input id="charMainStat" type="number" value="7000" min="0" step="1"
@@ -141,6 +161,37 @@
                     <span class="text-xs text-slate-500">%</span>
                   </div>
                 </label>
+                <label class="flex flex-col gap-1.5">
+                  <span class="text-xs text-slate-400">全局CD</span>
+                  <div class="flex items-center gap-1">
+                    <input id="charGlobalCd" type="text" value="40.8%" readonly
+                      class="w-full cursor-default rounded-md border border-line bg-base/50 px-3 py-2 text-sm font-mono text-cyanx outline-none" />
+                    <span class="text-xs text-slate-500">只读</span>
+                  </div>
+                </label>
+                </div>
+              </div>
+            </div>
+            <!-- Class Damage Base Preview -->
+            <div class="rounded-lg border border-line bg-panel/80">
+              <div class="flex items-center gap-2 border-b border-line px-5 py-3">
+                <i data-lucide="sigma" class="h-5 w-5 text-goldx"></i>
+                <span class="font-medium text-white">职业伤害基数</span>
+                <span id="classDamageMeta" class="text-xs text-slate-500">狂战士 · 43s</span>
+              </div>
+              <div class="grid gap-3 p-5 text-sm sm:grid-cols-3">
+                <div class="rounded-md bg-panel2 px-3 py-2">
+                  <span class="text-slate-400">总伤害</span>
+                  <span id="classTotalDamage" class="ml-2 font-mono text-goldx">--</span>
+                </div>
+                <div class="rounded-md bg-panel2 px-3 py-2">
+                  <span class="text-slate-400">启用技能</span>
+                  <span id="enabledSkillCount" class="ml-2 font-mono text-cyanx">--</span>
+                </div>
+                <div class="rounded-md bg-panel2 px-3 py-2">
+                  <span class="text-slate-400">输出时间</span>
+                  <span id="classOutputTimePreview" class="ml-2 font-mono text-cyanx">43s</span>
+                </div>
               </div>
             </div>
             <!-- Skill Branch Multiplier Preview -->
@@ -232,6 +283,112 @@
         </div>
       </section>
 
+      <section id="tab-advanced" class="tab-panel mt-4 hidden">
+        <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div class="rounded-lg border border-line bg-panel/80">
+            <div class="flex items-center gap-2 border-b border-line px-5 py-3">
+              <i data-lucide="settings-2" class="h-5 w-5 text-cyanx"></i>
+              <span class="font-medium text-white">高级设置</span>
+              <span class="text-xs text-slate-500">Advanced</span>
+            </div>
+            <div class="space-y-4 p-5">
+              <div>
+                <div class="mb-2 flex items-center justify-between gap-3">
+                  <span class="text-sm font-medium text-slate-200">计算模式</span>
+                  <span id="calcModeValue" class="rounded border border-cyanx/30 bg-cyanx/10 px-2 py-1 text-xs text-cyanx">
+                    ifExpert = 0
+                  </span>
+                </div>
+                <div class="grid gap-3 md:grid-cols-2" role="group" aria-label="计算模式">
+                  <button type="button" data-calc-mode="0"
+                    class="calc-mode-btn rounded-lg border border-line bg-panel2 p-4 text-left transition hover:border-cyanx/50">
+                    <span class="block text-sm font-semibold text-white">粗放模式</span>
+                    <span class="mt-1 block text-xs leading-5 text-slate-400">使用全局技能百分比与占比分配。</span>
+                  </button>
+                  <button type="button" data-calc-mode="1"
+                    class="calc-mode-btn rounded-lg border border-line bg-panel2 p-4 text-left transition hover:border-cyanx/50">
+                    <span class="block text-sm font-semibold text-white">专家模式</span>
+                    <span class="mt-1 block text-xs leading-5 text-slate-400">使用逐技能次数、CD、刷新规则。</span>
+                  </button>
+                </div>
+              </div>
+              <div class="rounded-lg border border-line/70 bg-base/30 p-4">
+                <div class="text-xs text-slate-500">当前模式</div>
+                <div id="calcModeSummary" class="mt-1 text-base font-semibold text-white">粗放模式</div>
+              </div>
+              <div class="rounded-lg border border-line/70 bg-base/30 p-4">
+                <div class="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <div class="text-sm font-medium text-slate-200">输出时间</div>
+                    <div class="mt-1 text-xs text-slate-500">用于专家模式的技能次数上限</div>
+                  </div>
+                  <span id="outputTimeValue"
+                    class="rounded border border-goldx/30 bg-goldx/10 px-2 py-1 text-xs text-goldx">43s</span>
+                </div>
+                <input id="outputTimeRange" type="range" min="0" max="1" step="1" value="1"
+                  class="h-2 w-full cursor-pointer accent-cyanx" />
+                <div class="mt-2 flex justify-between text-xs text-slate-500">
+                  <span>15s</span>
+                  <span>43s</span>
+                </div>
+              </div>
+              <div class="rounded-lg border border-line/70 bg-base/30 p-4">
+                <div class="mb-3">
+                  <div class="text-sm font-medium text-slate-200">粗放模式全局值</div>
+                  <div class="mt-1 text-xs text-slate-500">粗放模式不启用技能明细，直接读取当前输出时间对应的全局百分比。</div>
+                </div>
+                <div class="grid gap-3 md:grid-cols-2">
+                  <label class="flex flex-col gap-1.5">
+                    <span class="text-xs text-slate-400">15s 全局值</span>
+                    <div class="flex items-center gap-1">
+                      <input id="coarseGlobal15" type="number" min="0" step="1" value="75500000"
+                        class="w-full rounded-md border border-line bg-panel2 px-3 py-2 text-sm font-mono text-white outline-none focus:border-cyanx/60" />
+                      <span class="text-xs text-slate-500">%</span>
+                    </div>
+                  </label>
+                  <label class="flex flex-col gap-1.5">
+                    <span class="text-xs text-slate-400">43s 全局值</span>
+                    <div class="flex items-center gap-1">
+                      <input id="coarseGlobal43" type="number" min="0" step="1" value="15100000"
+                        class="w-full rounded-md border border-line bg-panel2 px-3 py-2 text-sm font-mono text-white outline-none focus:border-cyanx/60" />
+                      <span class="text-xs text-slate-500">%</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              <div class="overflow-hidden rounded-lg border border-line/70 bg-base/30">
+                <button id="globalCdToggle" type="button"
+                  class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-panel2/60"
+                  aria-expanded="false">
+                  <span>
+                    <span id="globalCdTitle" class="block text-sm font-medium text-slate-200">高级全局CD：34.2%</span>
+                    <span class="mt-1 block text-xs text-slate-500">仅统计高级设置来源，最终值不超过 70%。</span>
+                  </span>
+                  <i data-lucide="chevron-down" class="h-4 w-4 shrink-0 text-slate-400"></i>
+                </button>
+                <div id="globalCdPanel" class="hidden border-t border-line/70 p-4">
+                  <div class="grid gap-2 text-xs text-slate-500 sm:grid-cols-[120px_minmax(0,1fr)_76px]">
+                    <span>CD</span>
+                    <span>备注</span>
+                    <span class="hidden sm:block">操作</span>
+                  </div>
+                  <div id="globalCdRows" class="mt-2 space-y-2"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <aside class="rounded-lg border border-line bg-panel/80">
+            <div class="flex items-center gap-2 border-b border-line px-5 py-3">
+              <i data-lucide="list-checks" class="h-5 w-5 text-goldx"></i>
+              <span class="font-medium text-white">高级入口</span>
+            </div>
+            <div class="p-5 text-sm leading-6 text-slate-400">
+              <p>后续专家参数、粗放参数、管理员预设会在这里展开。</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
       <!-- ==================== Footer ==================== -->
       <footer class="mt-auto border-t border-line pt-4 pb-2 text-center text-xs text-slate-600">
         BigCalcs · DNF 115 Damage Calculator · 基于 AGENTS.md 规范构建
@@ -240,9 +397,224 @@
     </div>
   </main>
 
+  <!-- ==================== Class Data Modal ==================== -->
+  <div id="classDataModal" class="fixed inset-0 z-50 hidden bg-black/70 px-4 py-6 backdrop-blur-sm">
+    <div class="mx-auto flex max-h-[92vh] w-full max-w-[1460px] flex-col overflow-hidden rounded-lg border border-line bg-panel shadow-soft">
+      <div class="flex flex-wrap items-start justify-between gap-4 border-b border-line px-5 py-4">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <i data-lucide="table-properties" class="h-5 w-5 text-cyanx"></i>
+            <h2 id="classDataTitle" class="text-lg font-semibold text-white">狂战士职业数据</h2>
+          </div>
+          <p id="classDataMeta" class="mt-1 text-xs text-slate-500">输出时间 43s · 技能刷新关闭</p>
+          <div class="mt-2 inline-flex items-center gap-2 rounded-md border border-cyanx/30 bg-cyanx/10 px-2 py-1 text-xs text-cyanx">
+            <span>职业全局CD被动</span>
+            <span id="classPassiveCdValue" class="font-mono">10%</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <label class="flex items-center gap-2 rounded-md border border-line bg-panel2 px-3 py-2">
+            <input id="skillRefreshToggle" type="checkbox"
+              class="h-4 w-4 rounded border-line bg-panel2 text-cyanx focus:ring-cyanx/40" />
+            <span class="text-sm text-slate-200">技能刷新</span>
+          </label>
+          <label class="flex items-center gap-2 rounded-md border border-line bg-panel2 px-3 py-2">
+            <input id="applyGlobalCdToggle" type="checkbox"
+              class="h-4 w-4 rounded border-line bg-panel2 text-cyanx focus:ring-cyanx/40" />
+            <span class="text-sm text-slate-200">适用CD</span>
+          </label>
+          <button id="closeClassData" type="button"
+            class="grid h-9 w-9 place-items-center rounded-md border border-line bg-panel2 text-slate-300 transition hover:border-cyanx/50 hover:text-white"
+            aria-label="关闭职业数据">
+            <i data-lucide="x" class="h-4 w-4"></i>
+          </button>
+        </div>
+      </div>
+      <div class="grid min-h-0 flex-1 gap-0 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div class="min-h-0 overflow-auto">
+          <table class="w-full min-w-[980px] border-collapse text-sm">
+            <thead class="sticky top-0 z-10 bg-panel2 text-xs text-slate-400">
+              <tr class="border-b border-line">
+                <th class="w-20 px-3 py-3 text-left font-medium">是否启用</th>
+                <th class="w-20 px-3 py-3 text-left font-medium">区间</th>
+                <th class="px-3 py-3 text-left font-medium">技能名</th>
+                <th class="w-36 px-3 py-3 text-right font-medium">等效百分比</th>
+                <th id="skillCdHeader" class="w-24 px-3 py-3 text-right font-medium">原始 CD</th>
+                <th class="w-32 px-3 py-3 text-right font-medium">次数</th>
+                <th id="refreshHeader" class="hidden w-32 px-3 py-3 text-right font-medium">刷新次数</th>
+                <th class="w-28 px-3 py-3 text-right font-medium">总次数</th>
+                <th class="w-36 px-3 py-3 text-right font-medium">伤害</th>
+              </tr>
+            </thead>
+            <tbody id="skillTableBody" class="divide-y divide-line/70"></tbody>
+          </table>
+        </div>
+        <aside class="min-h-0 border-t border-line bg-base/25 lg:border-l lg:border-t-0">
+          <div class="border-b border-line px-4 py-3">
+            <div class="text-xs text-slate-500">伤害和</div>
+            <div id="modalTotalDamage" class="mt-1 font-mono text-2xl font-semibold text-goldx">--</div>
+          </div>
+          <div class="px-4 py-3">
+            <div class="mb-3 flex items-center justify-between gap-2">
+              <span class="text-sm font-medium text-white">组分占比</span>
+              <span id="modalEnabledCount" class="text-xs text-slate-500">--</span>
+            </div>
+            <div id="skillSummaryList" class="max-h-[60vh] space-y-2 overflow-auto pr-1"></div>
+          </div>
+        </aside>
+      </div>
+      <div class="border-t border-line px-5 py-3 text-xs text-slate-500">
+        次数默认等于当前输出时间下的上限；未启用的技能不会进入后续计算。
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VP Choice Layer ==================== -->
+  <div id="vpChoiceLayer" class="fixed inset-0 z-[60] hidden bg-black/60 px-4 py-6 backdrop-blur-sm">
+    <div class="mx-auto mt-24 w-full max-w-md overflow-hidden rounded-lg border border-line bg-panel shadow-soft">
+      <div class="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+        <div>
+          <div class="text-sm text-slate-500">VP 选择</div>
+          <h3 id="vpChoiceTitle" class="text-base font-semibold text-white">技能</h3>
+        </div>
+        <button id="closeVpChoice" type="button"
+          class="grid h-8 w-8 place-items-center rounded-md border border-line bg-panel2 text-slate-300 transition hover:border-cyanx/50 hover:text-white"
+          aria-label="关闭 VP 选择">
+          <i data-lucide="x" class="h-4 w-4"></i>
+        </button>
+      </div>
+      <div class="grid gap-4 p-4">
+        <div>
+          <div class="mb-2 text-xs font-medium text-slate-400">VP 模式</div>
+          <div class="grid gap-3">
+            <button type="button" data-vp-choice="none"
+              class="vp-choice-btn rounded-lg border border-line bg-panel2 p-3 text-left transition hover:border-cyanx/50">
+              <span class="block text-sm font-semibold text-white">不选择</span>
+              <span class="mt-1 block text-xs text-slate-500">使用原始技能数据。</span>
+            </button>
+            <button type="button" data-vp-choice="vp1"
+              class="vp-choice-btn rounded-lg border border-line bg-panel2 p-3 text-left transition hover:border-cyanx/50">
+              <span class="block text-sm font-semibold text-white">VP1</span>
+              <span class="mt-1 block text-xs text-slate-500">等待录入该职业 VP1 数据。</span>
+            </button>
+            <button type="button" data-vp-choice="vp2"
+              class="vp-choice-btn rounded-lg border border-line bg-panel2 p-3 text-left transition hover:border-cyanx/50">
+              <span class="block text-sm font-semibold text-white">VP2</span>
+              <span id="vp2ChoiceHint" class="mt-1 block text-xs text-slate-500">使用 VP2 技能数据。</span>
+            </button>
+          </div>
+        </div>
+        <div class="border-t border-line pt-4">
+          <div class="mb-2 flex items-center justify-between gap-3">
+            <span class="text-xs font-medium text-slate-400">VP 突破</span>
+            <span id="vpEnhanceCount" class="rounded border border-line bg-base/40 px-2 py-1 text-xs text-slate-400">0/3</span>
+          </div>
+          <div class="grid gap-3">
+            <button type="button" data-vp-enhance="0"
+              class="vp-enhance-btn rounded-lg border border-line bg-panel2 p-3 text-left transition hover:border-cyanx/50">
+              <span class="block text-sm font-semibold text-white">不突破</span>
+              <span class="mt-1 block text-xs text-slate-500">不占用突破名额。</span>
+            </button>
+            <button type="button" data-vp-enhance="1"
+              class="vp-enhance-btn rounded-lg border border-line bg-panel2 p-3 text-left transition hover:border-cyanx/50">
+              <span class="block text-sm font-semibold text-white">突破 · +55%技攻</span>
+              <span class="mt-1 block text-xs text-slate-500">该技能伤害 ×1.55。</span>
+            </button>
+            <button type="button" data-vp-enhance="2"
+              class="vp-enhance-btn rounded-lg border border-line bg-panel2 p-3 text-left transition hover:border-cyanx/50">
+              <span class="block text-sm font-semibold text-white">突破 · +38%技攻 / -15%CD</span>
+              <span class="mt-1 block text-xs text-slate-500">该技能伤害 ×1.38，CD ×0.85。</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== Tab Switch Logic ==================== -->
   <script>
     (function () {
+      const outputTimes = [15, 43];
+      const classPresets = {
+        berserker: {
+          name: "狂战士",
+          globalCdPassive: 10,
+          skills: [
+            { learnLevel: 100, name: "血魔极道：灭世", percentInput: "18913133%", singlePercent: 189131.33, cooldown: 290.0, enabled: true },
+            { learnLevel: 85, name: "血魔·弑天", percentInput: "10215105%", singlePercent: 102151.05, cooldown: 180.0, enabled: true },
+            { learnLevel: 50, name: "魔狱血刹", percentInput: "7267168%", singlePercent: 72671.68, cooldown: 145.0, enabled: false },
+            { learnLevel: 95, name: "疯魔血魂斩", percentInput: "6733914%", singlePercent: 67339.14, cooldown: 60.0, enabled: true },
+            { learnLevel: 80, name: "致命血陨", percentInput: "5260412%", singlePercent: 52604.12, cooldown: 50.0, enabled: true, vpEnhance: 1 },
+            {
+              learnLevel: 75,
+              name: "浴血之怒",
+              percentInput: "4545841%",
+              singlePercent: 45458.41,
+              cooldown: 40.0,
+              enabled: true,
+              vpEnhance: 1,
+              vpMode: "none",
+              vpOptions: {
+                vp2: {
+                  percentInput: "2272920%",
+                  singlePercent: 22729.20,
+                  cooldown: 20.0,
+                  chargeStack: { enabled: true, maxStacks: 2, rechargeCooldown: 20, initialStacks: 2 }
+                }
+              }
+            },
+            { learnLevel: 70, name: "强悍碾压", percentInput: "5528589%", singlePercent: 55285.89, cooldown: 50.0, enabled: true, vpEnhance: 1 },
+            { learnLevel: 60, name: "狂怒暴掠", percentInput: "3178172%", singlePercent: 31781.72, cooldown: 30.0, enabled: true },
+            {
+              learnLevel: 45,
+              name: "崩山裂地斩",
+              percentInput: "4417681%",
+              singlePercent: 44176.81,
+              cooldown: 40.0,
+              enabled: true,
+              vpMode: "none",
+              vpOptions: {
+                vp2: {
+                  percentInput: "2208840%",
+                  singlePercent: 22088.40,
+                  cooldown: 20.0,
+                  chargeStack: { enabled: true, maxStacks: 2, rechargeCooldown: 20, initialStacks: 2 }
+                }
+              }
+            },
+            { learnLevel: 40, name: "爆发之刃", percentInput: "2262463%", singlePercent: 22624.63, cooldown: 20.0, enabled: true },
+            { learnLevel: 35, name: "暴怒狂斩", percentInput: "2215689%", singlePercent: 22156.89, cooldown: 20.0, enabled: true },
+            { learnLevel: 35, name: "嗜魂封魔斩", percentInput: "2402248%", singlePercent: 24022.48, cooldown: 25.0, enabled: true },
+            { learnLevel: 30, name: "狂热回旋", percentInput: "1401141%", singlePercent: 14011.41, cooldown: 10.0, enabled: false },
+            { learnLevel: 30, name: "怒气爆发", percentInput: "1707176%", singlePercent: 17071.76, cooldown: 13.0, enabled: false },
+            { learnLevel: 25, name: "嗜魂之手(不可抓取)", displayName: "嗜魂之手", variantLabel: "不可抓取", percentInput: "928576%", singlePercent: 9285.76, cooldown: 6.0, enabled: false },
+            { learnLevel: 25, name: "嗜魂之手(可抓取)", displayName: "嗜魂之手", variantLabel: "可抓取", percentInput: "1074621%", singlePercent: 10746.21, cooldown: 6.0, enabled: false },
+            { learnLevel: 20, name: "狂气斩", percentInput: "814031%", singlePercent: 8140.31, cooldown: 6.0, enabled: false },
+            { learnLevel: 15, name: "十字刃", percentInput: "725396%", singlePercent: 7253.96, cooldown: 6.0, enabled: false },
+            { learnLevel: 10, name: "崩山击", percentInput: "501204%", singlePercent: 5012.04, cooldown: 4.0, enabled: false }
+          ]
+        }
+      };
+      const appState = {
+        ifExpert: 0,
+        outputTimeIndex: 1,
+        outputTime: 43,
+        skillRefresh: false,
+        applyGlobalCd: false,
+        selectedClass: "berserker",
+        coarseGlobalPercents: {
+          15: 75500000,
+          43: 15100000
+        },
+        globalCdRecords: [
+          { id: "global-cd-pet", value: 5, note: "宠物技能" },
+          { id: "global-cd-sub-equip", value: 15, note: "右槽通用" },
+          { id: "global-cd-oath", value: 18.5, note: "誓约通用" }
+        ]
+      };
+      window.BigCalcsState = appState;
+      window.BigCalcsData = { classPresets };
+
       const tabs = document.querySelectorAll(".tab-btn");
       const panels = document.querySelectorAll(".tab-panel");
 
@@ -265,6 +637,722 @@
       tabs.forEach(btn => {
         btn.addEventListener("click", () => activateTab(btn.dataset.tab));
       });
+
+      function getCurrentClassPreset() {
+        return classPresets[appState.selectedClass] || classPresets.berserker;
+      }
+
+      function getClassGlobalCdPassive() {
+        return Math.min(Math.max(Number.parseFloat(getCurrentClassPreset().globalCdPassive) || 0, 0), 100) / 100;
+      }
+
+      function hasVpSettings(skill) {
+        return skill.learnLevel >= 35 && skill.learnLevel <= 80;
+      }
+
+      function isAwakeningSkill(skill) {
+        return [50, 85, 100].includes(skill.learnLevel);
+      }
+
+      function getVpEnhanceConfig(skill) {
+        const enhance = Number(skill.vpEnhance || 0);
+        if (enhance === 1) {
+          return { value: 1, label: "突破+55%", damageMultiplier: 1.55, cooldownMultiplier: 1 };
+        }
+        if (enhance === 2) {
+          return { value: 2, label: "突破+38%/-15%CD", damageMultiplier: 1.38, cooldownMultiplier: 0.85 };
+        }
+        return { value: 0, label: "", damageMultiplier: 1, cooldownMultiplier: 1 };
+      }
+
+      function getVpEnhanceCount() {
+        return getCurrentClassPreset().skills.filter(skill => Number(skill.vpEnhance || 0) > 0).length;
+      }
+
+      function formatSkillPercent(singlePercent) {
+        return `${Math.round(singlePercent * 100)}%`;
+      }
+
+      function getActiveSkillData(skill) {
+        const mode = skill.vpMode || "none";
+        let activeSkill;
+        if (mode !== "none" && skill.vpOptions?.[mode]) {
+          activeSkill = {
+            ...skill,
+            ...skill.vpOptions[mode],
+            activeVpMode: mode
+          };
+        } else {
+          activeSkill = {
+            ...skill,
+            activeVpMode: "none"
+          };
+        }
+
+        const enhanceConfig = getVpEnhanceConfig(skill);
+        const enhancedSinglePercent = activeSkill.singlePercent * enhanceConfig.damageMultiplier;
+        const enhancedCooldown = activeSkill.cooldown * enhanceConfig.cooldownMultiplier;
+        const enhancedChargeStack = activeSkill.chargeStack?.enabled
+          ? {
+            ...activeSkill.chargeStack,
+            rechargeCooldown: activeSkill.chargeStack.rechargeCooldown * enhanceConfig.cooldownMultiplier
+          }
+          : activeSkill.chargeStack;
+        return {
+          ...activeSkill,
+          rawSinglePercent: activeSkill.singlePercent,
+          rawCooldown: activeSkill.cooldown,
+          singlePercent: enhancedSinglePercent,
+          cooldown: enhancedCooldown,
+          chargeStack: enhancedChargeStack,
+          percentInput: enhanceConfig.value > 0 ? formatSkillPercent(enhancedSinglePercent) : activeSkill.percentInput,
+          activeVpEnhance: enhanceConfig.value,
+          activeVpEnhanceLabel: enhanceConfig.label
+        };
+      }
+
+      function getSkillCountLimit(skill) {
+        const activeSkill = getActiveSkillData(skill);
+        const cooldownMultiplier = getSkillCooldownMultiplier(skill);
+        if (activeSkill.chargeStack?.enabled) {
+          const rechargeCooldown = activeSkill.chargeStack.rechargeCooldown * cooldownMultiplier;
+          const stackLimit = activeSkill.chargeStack.maxStacks ?? activeSkill.chargeStack.initialStacks ?? 1;
+          if (!rechargeCooldown || rechargeCooldown <= 0) {
+            return stackLimit;
+          }
+          return stackLimit + Math.floor(appState.outputTime / rechargeCooldown);
+        }
+        if (!activeSkill.cooldown || activeSkill.cooldown <= 0) {
+          return 0;
+        }
+        return Math.floor(appState.outputTime / (activeSkill.cooldown * cooldownMultiplier)) + 1;
+      }
+
+      function getSkillCooldownMultiplier(skill) {
+        if (!appState.applyGlobalCd || isAwakeningSkill(skill)) {
+          return 1;
+        }
+        return 1 - getGlobalCdReduction();
+      }
+
+      function getDisplayedCooldown(skill) {
+        const activeSkill = getActiveSkillData(skill);
+        const cooldown = activeSkill.chargeStack?.enabled
+          ? activeSkill.chargeStack.rechargeCooldown
+          : activeSkill.cooldown;
+        return cooldown * getSkillCooldownMultiplier(skill);
+      }
+
+      function clampCount(value, min, max) {
+        const number = Number.parseInt(value, 10);
+        if (Number.isNaN(number)) {
+          return min;
+        }
+        return Math.min(Math.max(number, min), max);
+      }
+
+      function getBaseCount(skill) {
+        const limit = getSkillCountLimit(skill);
+        return clampCount(skill.baseCount ?? limit, 0, limit);
+      }
+
+      function getRefreshCount(skill) {
+        return Math.max(Number.parseInt(skill.refreshCount ?? 0, 10) || 0, 0);
+      }
+
+      function getTotalCount(skill) {
+        if (!skill.enabled) {
+          return 0;
+        }
+        return getBaseCount(skill) + (appState.skillRefresh ? getRefreshCount(skill) : 0);
+      }
+
+      function getSkillDamage(skill) {
+        const activeSkill = getActiveSkillData(skill);
+        return activeSkill.singlePercent * getTotalCount(skill);
+      }
+
+      function formatLargeNumber(value) {
+        return Math.round(value).toLocaleString("zh-CN");
+      }
+
+      function formatDamagePercent(value) {
+        return `${formatLargeNumber(value * 100)}%`;
+      }
+
+      function getCurrentCoarsePercent() {
+        return Number(appState.coarseGlobalPercents[appState.outputTime]) || 0;
+      }
+
+      function getCurrentCoarseDamage() {
+        return getCurrentCoarsePercent() / 100;
+      }
+
+      function formatPercent(value) {
+        return `${(value * 100).toFixed(1).replace(/\.0$/, "")}%`;
+      }
+
+      function getAdvancedGlobalCdMultiplier() {
+        return appState.globalCdRecords.reduce((product, record) => {
+          const value = Math.min(Math.max(Number.parseFloat(record.value) || 0, 0), 100) / 100;
+          return product * (1 - value);
+        }, 1);
+      }
+
+      function getAdvancedGlobalCdReduction() {
+        return Math.min(Math.max(1 - getAdvancedGlobalCdMultiplier(), 0), 0.7);
+      }
+
+      function getGlobalCdReduction() {
+        const multiplier = getAdvancedGlobalCdMultiplier() * (1 - getClassGlobalCdPassive());
+        return Math.min(Math.max(1 - multiplier, 0), 0.7);
+      }
+
+      function createGlobalCdRecord() {
+        return {
+          id: `global-cd-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          value: "",
+          note: ""
+        };
+      }
+
+      function escapeAttribute(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/"/g, "&quot;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function updateGlobalCdDisplays() {
+        const totalValueText = formatPercent(getGlobalCdReduction());
+        const advancedValueText = formatPercent(getAdvancedGlobalCdReduction());
+        const charGlobalCd = document.getElementById("charGlobalCd");
+        const globalCdTitle = document.getElementById("globalCdTitle");
+
+        if (charGlobalCd) {
+          charGlobalCd.value = totalValueText;
+        }
+        if (globalCdTitle) {
+          globalCdTitle.textContent = `高级全局CD：${advancedValueText}`;
+        }
+      }
+
+      function renderGlobalCdSettings() {
+        const globalCdRows = document.getElementById("globalCdRows");
+        updateGlobalCdDisplays();
+        if (globalCdRows) {
+          globalCdRows.innerHTML = appState.globalCdRecords.map((record, index) => `
+            <div class="grid gap-2 sm:grid-cols-[120px_minmax(0,1fr)_76px]">
+              <label class="flex items-center gap-1">
+                <input type="number" min="0" max="100" step="0.1" value="${escapeAttribute(record.value)}" data-global-cd-index="${index}" data-global-cd-field="value"
+                  class="w-full rounded-md border border-line bg-panel2 px-3 py-2 text-sm font-mono text-white outline-none focus:border-cyanx/60" />
+                <span class="text-xs text-slate-500">%</span>
+              </label>
+              <input type="text" value="${escapeAttribute(record.note)}" data-global-cd-index="${index}" data-global-cd-field="note"
+                class="rounded-md border border-line bg-panel2 px-3 py-2 text-sm text-white outline-none focus:border-cyanx/60" />
+              <div class="grid grid-cols-2 gap-1">
+                <button type="button" data-global-cd-add="${index}"
+                  class="grid h-9 place-items-center rounded-md border border-cyanx/40 bg-cyanx/10 text-cyanx transition hover:bg-cyanx/15"
+                  aria-label="添加全局CD记录">
+                  <i data-lucide="plus" class="h-4 w-4"></i>
+                </button>
+                <button type="button" data-global-cd-remove="${index}"
+                  class="grid h-9 place-items-center rounded-md border border-line bg-panel2 text-slate-300 transition hover:border-redx/50 hover:text-redx"
+                  aria-label="删除全局CD记录">
+                  <i data-lucide="minus" class="h-4 w-4"></i>
+                </button>
+              </div>
+            </div>
+          `).join("");
+          lucide.createIcons();
+        }
+      }
+
+      function getDamageSummary() {
+        if (appState.ifExpert === 0) {
+          return {
+            mode: "coarse",
+            rows: [{
+              skill: { name: `${appState.outputTime}s 粗放全局值`, enabled: true },
+              activeSkill: { activeVpMode: "none", activeVpEnhance: 0 },
+              index: -1,
+              baseCount: 1,
+              refreshCount: 0,
+              totalCount: 1,
+              damage: getCurrentCoarseDamage()
+            }],
+            totalDamage: getCurrentCoarseDamage(),
+            enabledRows: []
+          };
+        }
+
+        const classPreset = getCurrentClassPreset();
+        const rows = classPreset.skills.map((skill, index) => {
+          const activeSkill = getActiveSkillData(skill);
+          const baseCount = getBaseCount(skill);
+          const refreshCount = getRefreshCount(skill);
+          const totalCount = getTotalCount(skill);
+          const damage = skill.enabled ? activeSkill.singlePercent * totalCount : 0;
+          return { skill, activeSkill, index, baseCount, refreshCount, totalCount, damage };
+        });
+        const totalDamage = rows.reduce((sum, row) => sum + row.damage, 0);
+        const enabledRows = rows.filter(row => row.skill.enabled);
+        return { mode: "expert", rows, totalDamage, enabledRows };
+      }
+
+      function renderDamageSummary(summary = getDamageSummary()) {
+        const classPreset = getCurrentClassPreset();
+        const totalText = formatDamagePercent(summary.totalDamage);
+        const isExpertMode = summary.mode === "expert";
+        const enabledCountText = isExpertMode ? `${summary.enabledRows.length}/${summary.rows.length}` : "未启用";
+
+        const classDamageMeta = document.getElementById("classDamageMeta");
+        const classTotalDamage = document.getElementById("classTotalDamage");
+        const enabledSkillCount = document.getElementById("enabledSkillCount");
+        const classOutputTimePreview = document.getElementById("classOutputTimePreview");
+        const modalTotalDamage = document.getElementById("modalTotalDamage");
+        const modalEnabledCount = document.getElementById("modalEnabledCount");
+        const skillSummaryList = document.getElementById("skillSummaryList");
+
+        if (classDamageMeta) {
+          classDamageMeta.textContent = isExpertMode
+            ? `${classPreset.name} · ${appState.outputTime}s · 专家`
+            : `粗放模式 · ${appState.outputTime}s全局值`;
+        }
+        if (classTotalDamage) {
+          classTotalDamage.textContent = totalText;
+        }
+        if (enabledSkillCount) {
+          enabledSkillCount.textContent = enabledCountText;
+        }
+        if (classOutputTimePreview) {
+          classOutputTimePreview.textContent = `${appState.outputTime}s`;
+        }
+        if (modalTotalDamage) {
+          modalTotalDamage.textContent = totalText;
+        }
+        if (modalEnabledCount) {
+          modalEnabledCount.textContent = isExpertMode ? `启用 ${enabledCountText}` : "粗放模式";
+        }
+        if (skillSummaryList) {
+          const visibleRows = summary.rows
+            .filter(row => row.damage > 0 && (isExpertMode ? row.skill.enabled : true))
+            .sort((a, b) => b.damage - a.damage);
+
+          skillSummaryList.innerHTML = visibleRows.map(row => {
+            const share = summary.totalDamage > 0 ? row.damage / summary.totalDamage * 100 : 0;
+            const vpText = row.activeSkill.activeVpMode !== "none" ? ` · ${row.activeSkill.activeVpMode.toUpperCase()}` : "";
+            const enhanceText = row.activeSkill.activeVpEnhance ? ` · ${row.activeSkill.activeVpEnhanceLabel}` : "";
+            return `
+              <div class="rounded-md border border-line/70 bg-panel2/70 p-2">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="min-w-0 truncate text-xs text-slate-200">${row.skill.name}${vpText}${enhanceText}</span>
+                  <span class="font-mono text-xs text-cyanx">${share.toFixed(1)}%</span>
+                </div>
+                <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-base">
+                  <div class="h-full rounded-full bg-cyanx" style="width: ${Math.max(share, 1)}%"></div>
+                </div>
+                <div class="mt-1 text-right font-mono text-[11px] text-slate-500">${formatDamagePercent(row.damage)}</div>
+              </div>
+            `;
+          }).join("");
+        }
+      }
+
+      function renderSkillTable() {
+        const modal = document.getElementById("classDataModal");
+        const title = document.getElementById("classDataTitle");
+        const meta = document.getElementById("classDataMeta");
+        const passiveCdValue = document.getElementById("classPassiveCdValue");
+        const body = document.getElementById("skillTableBody");
+        const refreshHeader = document.getElementById("refreshHeader");
+        const skillCdHeader = document.getElementById("skillCdHeader");
+        if (!body) {
+          return;
+        }
+
+        if (appState.ifExpert === 0) {
+          renderDamageSummary();
+          return;
+        }
+
+        const classPreset = getCurrentClassPreset();
+        title.textContent = `${classPreset.name}职业数据`;
+        meta.textContent = `输出时间 ${appState.outputTime}s · 技能刷新${appState.skillRefresh ? "开启" : "关闭"} · ${appState.applyGlobalCd ? "已适用CD" : "未适用CD"}`;
+        passiveCdValue.textContent = formatPercent(getClassGlobalCdPassive());
+        skillCdHeader.textContent = appState.applyGlobalCd ? "适用 CD" : "原始 CD";
+        refreshHeader.classList.toggle("hidden", !appState.skillRefresh);
+
+        const summary = getDamageSummary();
+        body.innerHTML = summary.rows.map(row => {
+          const { skill, activeSkill, index, baseCount, refreshCount, totalCount, damage } = row;
+          const limit = getSkillCountLimit(skill);
+          const displayedCooldown = getDisplayedCooldown(skill);
+          const rowMuted = skill.enabled ? "" : " opacity-50";
+          const vpMode = activeSkill.activeVpMode || "none";
+          const vpBadge = vpMode !== "none"
+            ? `<span class="rounded border border-cyanx/30 bg-cyanx/10 px-1.5 py-0.5 text-[11px] text-cyanx">${vpMode.toUpperCase()}</span>`
+            : "";
+          const enhanceBadge = activeSkill.activeVpEnhance
+            ? `<span class="rounded border border-greenx/30 bg-greenx/10 px-1.5 py-0.5 text-[11px] text-greenx">${activeSkill.activeVpEnhanceLabel}</span>`
+            : "";
+          const chargeText = activeSkill.chargeStack?.enabled
+            ? `<span class="rounded border border-goldx/30 bg-goldx/10 px-1.5 py-0.5 text-[11px] text-goldx">充能${activeSkill.chargeStack.maxStacks}层</span>`
+            : "";
+          const vpButton = hasVpSettings(skill)
+            ? `<button type="button" data-vp-settings="${index}"
+                class="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-line bg-base/50 text-slate-400 transition hover:border-cyanx/50 hover:text-cyanx"
+                aria-label="设置 ${skill.name} VP">
+                <i data-lucide="settings" class="h-3.5 w-3.5"></i>
+              </button>`
+            : "";
+          const refreshCell = appState.skillRefresh
+            ? `<td class="px-3 py-2 text-right">
+                <input type="number" min="0" step="1" value="${refreshCount}" data-skill-index="${index}" data-skill-field="refreshCount"
+                  class="w-20 rounded-md border border-line bg-base/60 px-2 py-1 text-right font-mono text-sm text-white outline-none focus:border-cyanx/60" />
+              </td>`
+            : "";
+
+          return `
+            <tr class="${rowMuted}">
+              <td class="px-3 py-2">
+                <input type="checkbox" ${skill.enabled ? "checked" : ""} data-skill-index="${index}" data-skill-field="enabled"
+                  class="h-4 w-4 rounded border-line bg-panel2 text-cyanx focus:ring-cyanx/40" />
+              </td>
+              <td class="px-3 py-2 font-mono text-slate-300">${skill.learnLevel}</td>
+              <td class="px-3 py-2">
+                <div class="flex items-center gap-2">
+                  <span class="min-w-0 font-medium text-white">${skill.name}</span>
+                  ${vpBadge}
+                  ${enhanceBadge}
+                  ${chargeText}
+                  ${vpButton}
+                </div>
+              </td>
+              <td class="px-3 py-2 text-right font-mono text-cyanx">${activeSkill.percentInput}</td>
+              <td class="px-3 py-2 text-right font-mono text-slate-300">${displayedCooldown.toFixed(1)}s</td>
+              <td class="px-3 py-2 text-right">
+                <div class="flex flex-col items-end gap-1">
+                  <input type="number" min="0" max="${limit}" step="1" value="${baseCount}" data-skill-index="${index}" data-skill-field="baseCount"
+                    class="w-20 rounded-md border border-line bg-base/60 px-2 py-1 text-right font-mono text-sm text-white outline-none focus:border-cyanx/60" />
+                  <span class="text-[11px] text-slate-500">上限 ${limit}</span>
+                </div>
+              </td>
+              ${refreshCell}
+              <td class="px-3 py-2 text-right font-mono text-goldx">${totalCount}</td>
+              <td class="px-3 py-2 text-right font-mono text-cyanx">${formatDamagePercent(damage)}</td>
+            </tr>
+          `;
+        }).join("");
+        renderDamageSummary(summary);
+
+        if (!modal.classList.contains("hidden")) {
+          lucide.createIcons();
+        }
+      }
+
+      // Class preset modal
+      (function () {
+        const classSelect = document.getElementById("classPreset");
+        const editButton = document.getElementById("editClassData");
+        const modal = document.getElementById("classDataModal");
+        const closeButton = document.getElementById("closeClassData");
+        const body = document.getElementById("skillTableBody");
+        const vpLayer = document.getElementById("vpChoiceLayer");
+        const vpTitle = document.getElementById("vpChoiceTitle");
+        const vpChoiceButtons = document.querySelectorAll(".vp-choice-btn");
+        const vpEnhanceButtons = document.querySelectorAll(".vp-enhance-btn");
+        const vpEnhanceCount = document.getElementById("vpEnhanceCount");
+        const closeVpButton = document.getElementById("closeVpChoice");
+
+        function getEditingVpSkill() {
+          const index = appState.editingVpSkillIndex;
+          return Number.isInteger(index) ? getCurrentClassPreset().skills[index] : null;
+        }
+
+        function renderVpChoice() {
+          const skill = getEditingVpSkill();
+          if (!skill) {
+            return;
+          }
+
+          vpTitle.textContent = skill.name;
+          vpChoiceButtons.forEach(button => {
+            const mode = button.dataset.vpChoice;
+            const active = (skill.vpMode || "none") === mode;
+            const available = mode === "none" || Boolean(skill.vpOptions?.[mode]);
+            button.disabled = !available;
+            button.classList.toggle("border-cyanx/70", active);
+            button.classList.toggle("bg-cyanx/10", active);
+            button.classList.toggle("opacity-45", !available);
+            button.classList.toggle("cursor-not-allowed", !available);
+            button.classList.toggle("border-line", !active);
+          });
+
+          const enhanceCount = getVpEnhanceCount();
+          const currentEnhance = Number(skill.vpEnhance || 0);
+          const canAddEnhance = currentEnhance > 0 || enhanceCount < 3;
+          vpEnhanceCount.textContent = `${enhanceCount}/3`;
+          vpEnhanceButtons.forEach(button => {
+            const value = Number(button.dataset.vpEnhance);
+            const active = currentEnhance === value;
+            const available = value === 0 || canAddEnhance;
+            button.disabled = !available;
+            button.classList.toggle("border-greenx/70", active);
+            button.classList.toggle("bg-greenx/10", active);
+            button.classList.toggle("opacity-45", !available);
+            button.classList.toggle("cursor-not-allowed", !available);
+            button.classList.toggle("border-line", !active);
+          });
+        }
+
+        function openVpChoice(index) {
+          appState.editingVpSkillIndex = index;
+          renderVpChoice();
+          vpLayer.classList.remove("hidden");
+          lucide.createIcons();
+        }
+
+        function closeVpChoice() {
+          vpLayer.classList.add("hidden");
+          appState.editingVpSkillIndex = null;
+        }
+
+        classSelect.addEventListener("change", () => {
+          appState.selectedClass = classSelect.value;
+          updateGlobalCdDisplays();
+          renderSkillTable();
+        });
+
+        editButton.addEventListener("click", () => {
+          if (appState.ifExpert !== 1) {
+            return;
+          }
+          renderSkillTable();
+          modal.classList.remove("hidden");
+          document.body.classList.add("overflow-hidden");
+          lucide.createIcons();
+        });
+
+        function closeModal() {
+          modal.classList.add("hidden");
+          document.body.classList.remove("overflow-hidden");
+        }
+
+        closeButton.addEventListener("click", closeModal);
+        modal.addEventListener("click", event => {
+          if (event.target === modal) {
+            closeModal();
+          }
+        });
+        document.addEventListener("keydown", event => {
+          if (event.key !== "Escape") {
+            return;
+          }
+          if (!vpLayer.classList.contains("hidden")) {
+            closeVpChoice();
+            return;
+          }
+          if (!modal.classList.contains("hidden")) {
+            closeModal();
+          }
+        });
+
+        body.addEventListener("click", event => {
+          const button = event.target.closest("[data-vp-settings]");
+          if (button) {
+            openVpChoice(Number(button.dataset.vpSettings));
+          }
+        });
+
+        function updateSkillField(event) {
+          const target = event.target;
+          const index = Number(target.dataset.skillIndex);
+          const field = target.dataset.skillField;
+          const skill = getCurrentClassPreset().skills[index];
+          if (!skill || !field) {
+            return;
+          }
+
+          if (field === "enabled") {
+            skill.enabled = target.checked;
+          } else if (field === "baseCount") {
+            skill.baseCount = clampCount(target.value, 0, getSkillCountLimit(skill));
+          } else if (field === "refreshCount") {
+            skill.refreshCount = getRefreshCount({ refreshCount: target.value });
+          }
+          renderSkillTable();
+        }
+
+        body.addEventListener("change", event => {
+          updateSkillField(event);
+        });
+
+        vpChoiceButtons.forEach(button => {
+          button.addEventListener("click", () => {
+            const skill = getEditingVpSkill();
+            const mode = button.dataset.vpChoice;
+            if (!skill || button.disabled) {
+              return;
+            }
+
+            skill.vpMode = mode;
+            delete skill.baseCount;
+            delete skill.refreshCount;
+            closeVpChoice();
+            renderSkillTable();
+          });
+        });
+
+        vpEnhanceButtons.forEach(button => {
+          button.addEventListener("click", () => {
+            const skill = getEditingVpSkill();
+            const value = Number(button.dataset.vpEnhance);
+            if (!skill || button.disabled) {
+              return;
+            }
+
+            skill.vpEnhance = value;
+            delete skill.baseCount;
+            delete skill.refreshCount;
+            renderVpChoice();
+            renderSkillTable();
+          });
+        });
+
+        closeVpButton.addEventListener("click", closeVpChoice);
+        vpLayer.addEventListener("click", event => {
+          if (event.target === vpLayer) {
+            closeVpChoice();
+          }
+        });
+      })();
+
+      // Advanced mode entry
+      (function () {
+        const modeButtons = document.querySelectorAll(".calc-mode-btn");
+        const modeValue = document.getElementById("calcModeValue");
+        const modeSummary = document.getElementById("calcModeSummary");
+        const outputTimeRange = document.getElementById("outputTimeRange");
+        const outputTimeValue = document.getElementById("outputTimeValue");
+        const coarseGlobal15 = document.getElementById("coarseGlobal15");
+        const coarseGlobal43 = document.getElementById("coarseGlobal43");
+        const skillRefreshToggle = document.getElementById("skillRefreshToggle");
+        const applyGlobalCdToggle = document.getElementById("applyGlobalCdToggle");
+        const globalCdToggle = document.getElementById("globalCdToggle");
+        const globalCdPanel = document.getElementById("globalCdPanel");
+        const globalCdRows = document.getElementById("globalCdRows");
+        const classSelect = document.getElementById("classPreset");
+        const editButton = document.getElementById("editClassData");
+
+        function updateExpertControls() {
+          const expert = appState.ifExpert === 1;
+          classSelect.disabled = !expert;
+          editButton.disabled = !expert;
+          editButton.title = expert ? "" : "开启专家模式后可编辑职业数据";
+        }
+
+        function updateMode(mode) {
+          appState.ifExpert = mode;
+          modeButtons.forEach(btn => {
+            const active = Number(btn.dataset.calcMode) === mode;
+            btn.classList.toggle("border-cyanx/70", active);
+            btn.classList.toggle("bg-cyanx/10", active);
+            btn.classList.toggle("shadow-glow", active);
+            btn.classList.toggle("border-line", !active);
+          });
+          modeValue.textContent = `ifExpert = ${mode}`;
+          modeSummary.textContent = mode === 1 ? "专家模式" : "粗放模式";
+          updateExpertControls();
+          renderDamageSummary();
+        }
+
+        function updateOutputTime(index) {
+          appState.outputTimeIndex = index;
+          appState.outputTime = outputTimes[index];
+          outputTimeRange.value = String(index);
+          outputTimeValue.textContent = `${appState.outputTime}s`;
+          renderSkillTable();
+        }
+
+        function updateSkillRefresh(enabled) {
+          appState.skillRefresh = enabled;
+          skillRefreshToggle.checked = enabled;
+          renderSkillTable();
+        }
+
+        function updateApplyGlobalCd(enabled) {
+          appState.applyGlobalCd = enabled;
+          applyGlobalCdToggle.checked = enabled;
+          renderSkillTable();
+        }
+
+        function toggleGlobalCdPanel() {
+          const isOpening = globalCdPanel.classList.contains("hidden");
+          globalCdPanel.classList.toggle("hidden", !isOpening);
+          globalCdToggle.setAttribute("aria-expanded", String(isOpening));
+        }
+
+        modeButtons.forEach(btn => {
+          btn.addEventListener("click", () => updateMode(Number(btn.dataset.calcMode)));
+        });
+        outputTimeRange.addEventListener("input", () => updateOutputTime(Number(outputTimeRange.value)));
+        coarseGlobal15.addEventListener("input", () => {
+          appState.coarseGlobalPercents[15] = Number(coarseGlobal15.value) || 0;
+          renderDamageSummary();
+        });
+        coarseGlobal43.addEventListener("input", () => {
+          appState.coarseGlobalPercents[43] = Number(coarseGlobal43.value) || 0;
+          renderDamageSummary();
+        });
+        skillRefreshToggle.addEventListener("change", () => updateSkillRefresh(skillRefreshToggle.checked));
+        applyGlobalCdToggle.addEventListener("change", () => updateApplyGlobalCd(applyGlobalCdToggle.checked));
+        globalCdToggle.addEventListener("click", toggleGlobalCdPanel);
+        globalCdRows.addEventListener("input", event => {
+          const target = event.target;
+          const index = Number(target.dataset.globalCdIndex);
+          const field = target.dataset.globalCdField;
+          const record = appState.globalCdRecords[index];
+          if (!record || !field) {
+            return;
+          }
+
+          record[field] = target.value;
+          updateGlobalCdDisplays();
+          renderSkillTable();
+        });
+        globalCdRows.addEventListener("click", event => {
+          const addButton = event.target.closest("[data-global-cd-add]");
+          const removeButton = event.target.closest("[data-global-cd-remove]");
+
+          if (addButton) {
+            const index = Number(addButton.dataset.globalCdAdd);
+            appState.globalCdRecords.splice(index + 1, 0, createGlobalCdRecord());
+            renderGlobalCdSettings();
+            renderSkillTable();
+            return;
+          }
+
+          if (removeButton) {
+            const index = Number(removeButton.dataset.globalCdRemove);
+            appState.globalCdRecords.splice(index, 1);
+            if (appState.globalCdRecords.length === 0) {
+              appState.globalCdRecords.push(createGlobalCdRecord());
+            }
+            renderGlobalCdSettings();
+            renderSkillTable();
+          }
+        });
+
+        updateMode(appState.ifExpert);
+        coarseGlobal15.value = appState.coarseGlobalPercents[15];
+        coarseGlobal43.value = appState.coarseGlobalPercents[43];
+        updateOutputTime(appState.outputTimeIndex);
+        updateSkillRefresh(appState.skillRefresh);
+        updateApplyGlobalCd(appState.applyGlobalCd);
+        renderGlobalCdSettings();
+      })();
 
       // Character preset preview (skill + effect branch multipliers)
       (function () {
