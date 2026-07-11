@@ -493,6 +493,52 @@ charge_stack = {
   coarse mode, their contribution can be represented by the chosen skill
   template's total percent/share.
 
+Summon-object components:
+
+- Some classes, especially Summoner, have display skills that split into normal
+  active/command components and summon-object sustained-damage components.
+- In source tables, summon-object rows are usually marked with suffixes such as
+  `(20s木桩)` or `(20s木桩)(无终结)`.
+- If both `(20s木桩)` and `(20s木桩)(无终结)` exist for the same summon, prefer
+  the `(无终结)` row as the summon-object component and ignore the non-`无终结`
+  row for this component split. If no `无终结` row exists, use the plain
+  `(20s木桩)` row.
+- Store summon-object components under a separate section/tag such as
+  `section = "召唤物"` and `tags = ["召唤物"]`. Their displayed original cooldown
+  is normalized to `20.0s` because the table value is already 20s dummy damage.
+- Summon-object components do not use the normal
+  `int(time_window / cooldown) + 1` count formula and do not support refresh.
+  Their damage is time-scaled from the sample window and multiplied by a
+  separate summon efficiency:
+
+```text
+summon_component_damage =
+  sample_20s_percent / 20 * time_window * summon_efficiency
+```
+
+  `time_window / 20` is only the time-scaling ratio. It is not the efficiency.
+  `summon_efficiency` defaults to `1.0` (`100%`) and is reserved for practical
+  loss or execution assumptions.
+- A display skill may therefore aggregate both normal entries and summon-object
+  entries. For example, Summoner's level-85 structure includes
+  `咒令：逆月之蚀`, `传说召唤：逆月者拉莫斯(蚀旋)`, and the
+  `传说召唤：逆月者拉莫斯(20s木桩)(无终结)` summon component.
+- Parent skill rows and component rows both have enable toggles. If the parent
+  is toggled on, all children are enabled. If the parent is toggled off, all
+  children are disabled. If all children are enabled, the parent is checked. If
+  no children are enabled, the parent is unchecked. If only some children are
+  enabled, the parent displays an indeterminate/partial-check state.
+- VP and breakthrough controls live on the parent skill row. When a parent skill
+  has components, its active VP/breakthrough modifiers cascade to all enabled
+  child components unless a component explicitly overrides or excludes them.
+- Component-level defaults may differ from the parent. For Summoner level 50,
+  the parent branch is enabled by default, but the normal component
+  `必杀剑·千鬼杀` is disabled by default while the summon component
+  `征服者卡西利亚斯(20s木桩)(无终结)` remains enabled.
+- The current UI should show parent rows as the main skill list and expandable
+  child rows as calculation components. Damage summary / component share output
+  should aggregate by parent skill, not list every child component separately.
+
 ### Count Model & Refresh Rules
 
 Skill counts are split into two parts:

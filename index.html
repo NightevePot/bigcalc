@@ -121,6 +121,7 @@
                       disabled
                       class="rounded-md border border-line bg-panel2 px-3 py-2 text-sm text-white outline-none focus:border-greenx/60 disabled:cursor-not-allowed disabled:opacity-50">
                       <option value="berserker">狂战士</option>
+                      <option value="summoner">召唤师</option>
                     </select>
                   </label>
                   <button id="editClassData" type="button" disabled
@@ -495,7 +496,7 @@
             <button type="button" data-vp-choice="vp1"
               class="vp-choice-btn rounded-lg border border-line bg-panel2 p-3 text-left transition hover:border-cyanx/50">
               <span class="block text-sm font-semibold text-white">VP1</span>
-              <span class="mt-1 block text-xs text-slate-500">等待录入该职业 VP1 数据。</span>
+              <span id="vp1ChoiceHint" class="mt-1 block text-xs text-slate-500">等待录入该职业 VP1 数据。</span>
             </button>
             <button type="button" data-vp-choice="vp2"
               class="vp-choice-btn rounded-lg border border-line bg-panel2 p-3 text-left transition hover:border-cyanx/50">
@@ -583,24 +584,213 @@
               }
             },
             { learnLevel: 40, name: "爆发之刃", percentInput: "2262463%", singlePercent: 22624.63, cooldown: 20.0, enabled: true },
-            { learnLevel: 35, name: "暴怒狂斩", percentInput: "2215689%", singlePercent: 22156.89, cooldown: 20.0, enabled: true },
+            { learnLevel: 35, name: "暴怒狂斩", percentInput: "2215689%", singlePercent: 22156.89, cooldown: 20.0, enabled: false },
             { learnLevel: 35, name: "嗜魂封魔斩", percentInput: "2402248%", singlePercent: 24022.48, cooldown: 25.0, enabled: true },
             { learnLevel: 30, name: "狂热回旋", percentInput: "1401141%", singlePercent: 14011.41, cooldown: 10.0, enabled: false },
-            { learnLevel: 30, name: "怒气爆发", percentInput: "1707176%", singlePercent: 17071.76, cooldown: 13.0, enabled: false },
+            { learnLevel: 30, name: "怒气爆发", percentInput: "1707176%", singlePercent: 17071.76, cooldown: 13.0, enabled: true },
             { learnLevel: 25, name: "嗜魂之手(不可抓取)", displayName: "嗜魂之手", variantLabel: "不可抓取", percentInput: "928576%", singlePercent: 9285.76, cooldown: 6.0, enabled: false },
             { learnLevel: 25, name: "嗜魂之手(可抓取)", displayName: "嗜魂之手", variantLabel: "可抓取", percentInput: "1074621%", singlePercent: 10746.21, cooldown: 6.0, enabled: false },
             { learnLevel: 20, name: "狂气斩", percentInput: "814031%", singlePercent: 8140.31, cooldown: 6.0, enabled: false },
             { learnLevel: 15, name: "十字刃", percentInput: "725396%", singlePercent: 7253.96, cooldown: 6.0, enabled: false },
             { learnLevel: 10, name: "崩山击", percentInput: "501204%", singlePercent: 5012.04, cooldown: 4.0, enabled: false }
           ]
+        },
+        summoner: {
+          name: "召唤师",
+          globalCdPassive: 0,
+          skills: [
+            { section: "常规技能", learnLevel: 100, name: "魔月·德拉里昂", percentInput: "13343759%", singlePercent: 133437.59, cooldown: 270.0, enabled: true },
+            { section: "常规技能", learnLevel: 85, name: "咒令：逆月之蚀", percentInput: "5792390%", singlePercent: 57923.90, cooldown: 170.0, enabled: true },
+            {
+              section: "常规技能",
+              learnLevel: 85,
+              name: "传说召唤：逆月者拉莫斯",
+              enabled: true,
+              components: [
+                { section: "常规技能", name: "蚀旋", percentInput: "724068%", singlePercent: 7240.68, cooldown: 10.0, enabled: true },
+                { section: "召唤物", name: "20s木桩 / 无终结", tags: ["召唤物"], summonWindow: 20, efficiency: 0.88, percentInput: "2111931%", singlePercent: 21119.31, cooldown: 20.0, enabled: true }
+              ]
+            },
+            {
+              section: "常规技能",
+              learnLevel: 50,
+              name: "必杀剑·千鬼杀 / 征服者卡西利亚斯",
+              enabled: true,
+              components: [
+                { section: "常规技能", name: "必杀剑·千鬼杀", percentInput: "4619791%", singlePercent: 46197.91, cooldown: 135.0, enabled: false },
+                { section: "召唤物", name: "征服者卡西利亚斯 20s木桩 / 无终结", tags: ["召唤物"], summonWindow: 20, efficiency: 0.96, percentInput: "3369018%", singlePercent: 33690.18, cooldown: 20.0, enabled: true }
+              ]
+            },
+            { section: "常规技能", learnLevel: 95, name: "至高精灵王", percentInput: "6747441%", singlePercent: 67474.41, cooldown: 60.0, enabled: true },
+            { section: "常规技能", learnLevel: 80, name: "传说召唤：月蚀之影", percentInput: "4473090%", singlePercent: 44730.90, cooldown: 43.0, enabled: true },
+            {
+              section: "常规技能",
+              learnLevel: 75,
+              name: "狂化黑月",
+              percentInput: "6550941%",
+              singlePercent: 65509.41,
+              cooldown: 40.0,
+              enabled: true,
+              vpEnhance: 1,
+              vpMode: "none",
+              vpOptions: {
+                vp1: {
+                  percentInput: "6147240%",
+                  singlePercent: 61472.40,
+                  cooldown: 40.0
+                }
+              }
+            },
+            { section: "常规技能", learnLevel: 70, name: "咒令：愤怒咆哮", percentInput: "3838654%", singlePercent: 38386.54, cooldown: 50.0, enabled: true },
+            {
+              section: "常规技能",
+              learnLevel: 45,
+              name: "契约召唤：牛头王库鲁塔",
+              enabled: true,
+              vpEnhance: 1,
+              components: [
+                { section: "常规技能", name: "狂暴愤怒", percentInput: "1446971%", singlePercent: 14469.71, cooldown: 40.0, enabled: true },
+                { section: "召唤物", name: "20s木桩 / 无终结", tags: ["召唤物"], summonWindow: 20, efficiency: 0.88, percentInput: "3730205%", singlePercent: 37302.05, cooldown: 20.0, enabled: true }
+              ]
+            },
+            {
+              section: "常规技能",
+              learnLevel: 45,
+              name: "束缚印记",
+              percentInput: "565688%",
+              singlePercent: 5656.88,
+              cooldown: 25.0,
+              enabled: true,
+              vpMode: "none",
+              vpOptions: {
+                vp1: {
+                  percentInput: "282844%",
+                  singlePercent: 2828.44,
+                  cooldown: 12.5
+                }
+              }
+            },
+            {
+              section: "常规技能",
+              learnLevel: 40,
+              name: "精灵召唤：伊伽贝拉",
+              enabled: true,
+              vpEnhance: 1,
+              components: [
+                { section: "常规技能", name: "超高密度镭射光", percentInput: "1412322%", singlePercent: 14123.22, cooldown: 30.0, enabled: true },
+                { section: "召唤物", name: "20s木桩 / 无终结", tags: ["召唤物"], summonWindow: 20, efficiency: 0.88, percentInput: "3396616%", singlePercent: 33966.16, cooldown: 20.0, enabled: true }
+              ]
+            },
+            {
+              section: "常规技能",
+              learnLevel: 35,
+              name: "契约召唤：路易丝",
+              enabled: true,
+              components: [
+                { section: "常规技能", name: "陨石冲击", percentInput: "721741%", singlePercent: 7217.41, cooldown: 20.0, enabled: false },
+                { section: "召唤物", name: "20s木桩", tags: ["召唤物"], summonWindow: 20, efficiency: 0.05, percentInput: "1736505%", singlePercent: 17365.05, cooldown: 20.0, enabled: true }
+              ]
+            },
+            {
+              section: "常规技能",
+              learnLevel: 30,
+              name: "精灵召唤：火焰赫瑞克",
+              enabled: true,
+              components: [
+                { section: "常规技能", name: "火焰爆剑术", percentInput: "613604%", singlePercent: 6136.04, cooldown: 15.0, enabled: false },
+                { section: "召唤物", name: "20s木桩", tags: ["召唤物"], summonWindow: 20, efficiency: 0.17, percentInput: "1566947%", singlePercent: 15669.47, cooldown: 20.0, enabled: true }
+              ]
+            },
+            {
+              section: "常规技能",
+              learnLevel: 30,
+              name: "精灵召唤：冰影阿奎利斯",
+              enabled: true,
+              components: [
+                { section: "常规技能", name: "七重冰导弹", percentInput: "596647%", singlePercent: 5966.47, cooldown: 15.0, enabled: false },
+                { section: "召唤物", name: "20s木桩", tags: ["召唤物"], summonWindow: 20, efficiency: 0.17, percentInput: "1673797%", singlePercent: 16737.97, cooldown: 20.0, enabled: true }
+              ]
+            },
+            {
+              section: "常规技能",
+              learnLevel: 30,
+              name: "精灵召唤：极光格雷林",
+              enabled: true,
+              components: [
+                { section: "常规技能", name: "天雷", percentInput: "594035%", singlePercent: 5940.35, cooldown: 15.0, enabled: true },
+                { section: "召唤物", name: "20s木桩", tags: ["召唤物"], summonWindow: 20, efficiency: 0.88, percentInput: "2871229%", singlePercent: 28712.29, cooldown: 20.0, enabled: true }
+              ]
+            },
+            {
+              section: "常规技能",
+              learnLevel: 30,
+              name: "精灵召唤：亡魂默克尔",
+              enabled: true,
+              components: [
+                { section: "常规技能", name: "黑雾", percentInput: "574445%", singlePercent: 5744.45, cooldown: 15.0, enabled: false },
+                { section: "召唤物", name: "20s木桩", tags: ["召唤物"], summonWindow: 20, efficiency: 0.20, percentInput: "1750827%", singlePercent: 17508.27, cooldown: 20.0, enabled: true }
+              ]
+            },
+            {
+              section: "常规技能",
+              learnLevel: 30,
+              name: "契约召唤：袄索",
+              enabled: true,
+              components: [
+                { section: "常规技能", name: "喷吐蚀块", percentInput: "741359%", singlePercent: 7413.59, cooldown: 15.0, enabled: true },
+                { section: "召唤物", name: "20s木桩", tags: ["召唤物"], summonWindow: 20, efficiency: 0.88, percentInput: "1836759%", singlePercent: 18367.59, cooldown: 20.0, enabled: true }
+              ]
+            },
+            { section: "常规技能", learnLevel: 25, name: "魔力印记", percentInput: "13234%", singlePercent: 132.34, cooldown: 1.0, enabled: true },
+            {
+              section: "常规技能",
+              learnLevel: 25,
+              name: "契约召唤：桑德尔",
+              enabled: true,
+              components: [
+                { section: "常规技能", name: "剑气", percentInput: "466709%", singlePercent: 4667.09, cooldown: 12.0, enabled: false },
+                { section: "召唤物", name: "20s木桩", tags: ["召唤物"], summonWindow: 20, efficiency: 1, percentInput: "1511785%", singlePercent: 15117.85, cooldown: 20.0, enabled: true }
+              ]
+            },
+            {
+              section: "常规技能",
+              learnLevel: 20,
+              name: "契约召唤：弗利特",
+              enabled: true,
+              components: [
+                { section: "常规技能", name: "龙威", percentInput: "376640%", singlePercent: 3766.40, cooldown: 10.0, enabled: false },
+                { section: "召唤物", name: "20s木桩", tags: ["召唤物"], summonWindow: 20, efficiency: 0.16, percentInput: "1789084%", singlePercent: 17890.84, cooldown: 20.0, enabled: true }
+              ]
+            },
+            { section: "常规技能", learnLevel: 20, name: "精灵献祭", percentInput: "1416857%", singlePercent: 14168.57, cooldown: 20.0, enabled: true },
+            {
+              section: "常规技能",
+              learnLevel: 10,
+              name: "鞭挞",
+              enabled: true,
+              components: [
+                { section: "常规技能", name: "绝对支配", percentInput: "268054%", singlePercent: 2680.54, cooldown: 3.0, baseCount: 9, enabled: true }
+              ]
+            },
+            {
+              section: "常规技能",
+              learnLevel: 5,
+              name: "契约召唤：赫德尔",
+              enabled: true,
+              components: [
+                { section: "常规技能", name: "棒暴击", percentInput: "230594%", singlePercent: 2305.94, cooldown: 8.0, enabled: false },
+                { section: "召唤物", name: "20s木桩", tags: ["召唤物"], summonWindow: 20, efficiency: 0.14, percentInput: "658603%", singlePercent: 6586.03, cooldown: 20.0, enabled: true }
+              ]
+            }
+          ]
         }
       };
       const appState = {
-        ifExpert: 0,
+        ifExpert: 1,
         outputTimeIndex: 1,
         outputTime: 43,
         skillRefresh: false,
-        applyGlobalCd: false,
+        applyGlobalCd: true,
         selectedClass: "berserker",
         coarseGlobalPercents: {
           15: 75500000,
@@ -646,7 +836,53 @@
         return Math.min(Math.max(Number.parseFloat(getCurrentClassPreset().globalCdPassive) || 0, 0), 100) / 100;
       }
 
+      function hasComponents(skill) {
+        return Array.isArray(skill.components) && skill.components.length > 0;
+      }
+
+      function getEnabledComponents(skill) {
+        return hasComponents(skill) ? skill.components.filter(component => component.enabled) : [];
+      }
+
+      function getParentCheckState(skill) {
+        if (!hasComponents(skill)) {
+          return { checked: Boolean(skill.enabled), indeterminate: false };
+        }
+
+        const enabledCount = getEnabledComponents(skill).length;
+        if (enabledCount === 0) {
+          return { checked: false, indeterminate: false };
+        }
+        if (enabledCount === skill.components.length) {
+          return { checked: true, indeterminate: false };
+        }
+        return { checked: false, indeterminate: true };
+      }
+
+      function syncParentEnabled(skill) {
+        if (hasComponents(skill)) {
+          skill.enabled = getEnabledComponents(skill).length > 0;
+        }
+      }
+
+      function clearSkillCounts(skill) {
+        delete skill.baseCount;
+        delete skill.refreshCount;
+        if (hasComponents(skill)) {
+          skill.components.forEach(component => {
+            delete component.baseCount;
+            delete component.refreshCount;
+          });
+        }
+      }
+
       function hasVpSettings(skill) {
+        if (skill.section === "召唤物") {
+          return false;
+        }
+        if (isAwakeningSkill(skill)) {
+          return false;
+        }
         return skill.learnLevel >= 35 && skill.learnLevel <= 80;
       }
 
@@ -673,18 +909,19 @@
         return `${Math.round(singlePercent * 100)}%`;
       }
 
-      function getActiveSkillData(skill) {
+      function getActiveSkillData(skill, component = null) {
+        const source = component || skill;
         const mode = skill.vpMode || "none";
         let activeSkill;
-        if (mode !== "none" && skill.vpOptions?.[mode]) {
+        if (mode !== "none" && source.vpOptions?.[mode]) {
           activeSkill = {
-            ...skill,
-            ...skill.vpOptions[mode],
+            ...source,
+            ...source.vpOptions[mode],
             activeVpMode: mode
           };
         } else {
           activeSkill = {
-            ...skill,
+            ...source,
             activeVpMode: "none"
           };
         }
@@ -711,9 +948,12 @@
         };
       }
 
-      function getSkillCountLimit(skill) {
-        const activeSkill = getActiveSkillData(skill);
-        const cooldownMultiplier = getSkillCooldownMultiplier(skill);
+      function getSkillCountLimit(skill, component = null) {
+        const activeSkill = getActiveSkillData(skill, component);
+        if (activeSkill.summonWindow) {
+          return appState.outputTime / activeSkill.summonWindow;
+        }
+        const cooldownMultiplier = getSkillCooldownMultiplier(skill, component);
         if (activeSkill.chargeStack?.enabled) {
           const rechargeCooldown = activeSkill.chargeStack.rechargeCooldown * cooldownMultiplier;
           const stackLimit = activeSkill.chargeStack.maxStacks ?? activeSkill.chargeStack.initialStacks ?? 1;
@@ -728,19 +968,23 @@
         return Math.floor(appState.outputTime / (activeSkill.cooldown * cooldownMultiplier)) + 1;
       }
 
-      function getSkillCooldownMultiplier(skill) {
+      function getSkillCooldownMultiplier(skill, component = null) {
+        const source = component || skill;
+        if (source.summonWindow) {
+          return 1;
+        }
         if (!appState.applyGlobalCd || isAwakeningSkill(skill)) {
           return 1;
         }
         return 1 - getGlobalCdReduction();
       }
 
-      function getDisplayedCooldown(skill) {
-        const activeSkill = getActiveSkillData(skill);
+      function getDisplayedCooldown(skill, component = null) {
+        const activeSkill = getActiveSkillData(skill, component);
         const cooldown = activeSkill.chargeStack?.enabled
           ? activeSkill.chargeStack.rechargeCooldown
           : activeSkill.cooldown;
-        return cooldown * getSkillCooldownMultiplier(skill);
+        return cooldown * getSkillCooldownMultiplier(skill, component);
       }
 
       function clampCount(value, min, max) {
@@ -751,23 +995,53 @@
         return Math.min(Math.max(number, min), max);
       }
 
-      function getBaseCount(skill) {
-        const limit = getSkillCountLimit(skill);
-        return clampCount(skill.baseCount ?? limit, 0, limit);
+      function getBaseCount(skill, component = null) {
+        const source = component || skill;
+        const limit = getSkillCountLimit(skill, component);
+        if ((component || skill).summonWindow) {
+          return limit;
+        }
+        return clampCount(source.baseCount ?? limit, 0, limit);
       }
 
-      function getRefreshCount(skill) {
-        return Math.max(Number.parseInt(skill.refreshCount ?? 0, 10) || 0, 0);
-      }
-
-      function getTotalCount(skill) {
-        if (!skill.enabled) {
+      function getRefreshCount(skill, component = null) {
+        const source = component || skill;
+        if (source.summonWindow) {
           return 0;
         }
-        return getBaseCount(skill) + (appState.skillRefresh ? getRefreshCount(skill) : 0);
+        return Math.max(Number.parseInt(source.refreshCount ?? 0, 10) || 0, 0);
+      }
+
+      function getTotalCount(skill, component = null) {
+        const source = component || skill;
+        if (!source.enabled) {
+          return 0;
+        }
+        if (source.summonWindow) {
+          return getBaseCount(skill, component);
+        }
+        return getBaseCount(skill, component) + (appState.skillRefresh ? getRefreshCount(skill, component) : 0);
+      }
+
+      function getSummonEfficiency(component) {
+        return Math.max(Number.parseFloat(component.efficiency ?? 1) || 0, 0);
+      }
+
+      function getComponentDamage(skill, component) {
+        if (!component.enabled) {
+          return 0;
+        }
+        const activeSkill = getActiveSkillData(skill, component);
+        if (activeSkill.summonWindow) {
+          return activeSkill.singlePercent / activeSkill.summonWindow * appState.outputTime * getSummonEfficiency(component);
+        }
+        return activeSkill.singlePercent * getTotalCount(skill, component);
       }
 
       function getSkillDamage(skill) {
+        if (hasComponents(skill)) {
+          return skill.components.reduce((sum, component) => sum + getComponentDamage(skill, component), 0);
+        }
         const activeSkill = getActiveSkillData(skill);
         return activeSkill.singlePercent * getTotalCount(skill);
       }
@@ -889,6 +1163,25 @@
 
         const classPreset = getCurrentClassPreset();
         const rows = classPreset.skills.map((skill, index) => {
+          if (hasComponents(skill)) {
+            syncParentEnabled(skill);
+            const componentRows = skill.components.map((component, componentIndex) => {
+              const activeSkill = getActiveSkillData(skill, component);
+              const baseCount = getBaseCount(skill, component);
+              const refreshCount = getRefreshCount(skill, component);
+              const totalCount = getTotalCount(skill, component);
+              const damage = getComponentDamage(skill, component);
+              return { skill, component, componentIndex, activeSkill, baseCount, refreshCount, totalCount, damage };
+            });
+            const damage = componentRows.reduce((sum, row) => sum + row.damage, 0);
+            const activeSkill = {
+              activeVpMode: skill.vpMode || "none",
+              activeVpEnhance: Number(skill.vpEnhance || 0),
+              activeVpEnhanceLabel: getVpEnhanceConfig(skill).label
+            };
+            return { skill, activeSkill, index, baseCount: null, refreshCount: 0, totalCount: null, damage, componentRows };
+          }
+
           const activeSkill = getActiveSkillData(skill);
           const baseCount = getBaseCount(skill);
           const refreshCount = getRefreshCount(skill);
@@ -985,11 +1278,7 @@
         refreshHeader.classList.toggle("hidden", !appState.skillRefresh);
 
         const summary = getDamageSummary();
-        body.innerHTML = summary.rows.map(row => {
-          const { skill, activeSkill, index, baseCount, refreshCount, totalCount, damage } = row;
-          const limit = getSkillCountLimit(skill);
-          const displayedCooldown = getDisplayedCooldown(skill);
-          const rowMuted = skill.enabled ? "" : " opacity-50";
+        const renderSkillNameBadges = (skill, activeSkill, extraBadges = "") => {
           const vpMode = activeSkill.activeVpMode || "none";
           const vpBadge = vpMode !== "none"
             ? `<span class="rounded border border-cyanx/30 bg-cyanx/10 px-1.5 py-0.5 text-[11px] text-cyanx">${vpMode.toUpperCase()}</span>`
@@ -1000,6 +1289,15 @@
           const chargeText = activeSkill.chargeStack?.enabled
             ? `<span class="rounded border border-goldx/30 bg-goldx/10 px-1.5 py-0.5 text-[11px] text-goldx">充能${activeSkill.chargeStack.maxStacks}层</span>`
             : "";
+          return `${vpBadge}${enhanceBadge}${chargeText}${extraBadges}`;
+        };
+
+        const renderFlatRow = row => {
+          const { skill, activeSkill, index, baseCount, refreshCount, totalCount, damage } = row;
+          const limit = getSkillCountLimit(skill);
+          const displayedCooldown = getDisplayedCooldown(skill);
+          const rowMuted = skill.enabled ? "" : " opacity-50";
+          const nameBadges = renderSkillNameBadges(skill, activeSkill);
           const vpButton = hasVpSettings(skill)
             ? `<button type="button" data-vp-settings="${index}"
                 class="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-line bg-base/50 text-slate-400 transition hover:border-cyanx/50 hover:text-cyanx"
@@ -1024,9 +1322,7 @@
               <td class="px-3 py-2">
                 <div class="flex items-center gap-2">
                   <span class="min-w-0 font-medium text-white">${skill.name}</span>
-                  ${vpBadge}
-                  ${enhanceBadge}
-                  ${chargeText}
+                  ${nameBadges}
                   ${vpButton}
                 </div>
               </td>
@@ -1044,7 +1340,118 @@
               <td class="px-3 py-2 text-right font-mono text-cyanx">${formatDamagePercent(damage)}</td>
             </tr>
           `;
-        }).join("");
+        };
+
+        const renderComponentRow = (row, parentIndex) => {
+          const { skill, component, componentIndex, activeSkill, baseCount, refreshCount, totalCount, damage } = row;
+          const isSummon = Boolean(activeSkill.summonWindow);
+          const displayedCooldown = getDisplayedCooldown(skill, component);
+          const limit = getSkillCountLimit(skill, component);
+          const componentMuted = component.enabled ? "" : " opacity-50";
+          const typeBadge = component.section
+            ? `<span class="rounded border border-line bg-base/50 px-1.5 py-0.5 text-[11px] text-slate-400">${component.section}</span>`
+            : "";
+          const summonWindowBadge = isSummon
+            ? `<span class="rounded border border-goldx/30 bg-goldx/10 px-1.5 py-0.5 text-[11px] text-goldx">${activeSkill.summonWindow}s木桩</span>`
+            : "";
+          const countCell = isSummon
+            ? `<td class="px-3 py-2 text-right">
+                <div class="flex flex-col items-end gap-1">
+                  <label class="flex items-center gap-1">
+                    <input type="number" min="0" step="1" value="${Math.round(getSummonEfficiency(component) * 100)}" data-skill-index="${parentIndex}" data-component-index="${componentIndex}" data-component-field="efficiency"
+                      class="w-20 rounded-md border border-line bg-base/60 px-2 py-1 text-right font-mono text-sm text-white outline-none focus:border-cyanx/60" />
+                    <span class="text-xs text-slate-500">%</span>
+                  </label>
+                  <span class="text-[11px] text-slate-500">效率</span>
+                </div>
+              </td>`
+            : `<td class="px-3 py-2 text-right">
+                <div class="flex flex-col items-end gap-1">
+                  <input type="number" min="0" max="${limit}" step="1" value="${baseCount}" data-skill-index="${parentIndex}" data-component-index="${componentIndex}" data-component-field="baseCount"
+                    class="w-20 rounded-md border border-line bg-base/60 px-2 py-1 text-right font-mono text-sm text-white outline-none focus:border-cyanx/60" />
+                  <span class="text-[11px] text-slate-500">上限 ${limit}</span>
+                </div>
+              </td>`;
+          const refreshCell = appState.skillRefresh
+            ? `<td class="px-3 py-2 text-right">
+                ${isSummon
+                ? `<span class="text-xs text-slate-500">不支持</span>`
+                : `<input type="number" min="0" step="1" value="${refreshCount}" data-skill-index="${parentIndex}" data-component-index="${componentIndex}" data-component-field="refreshCount"
+                    class="w-20 rounded-md border border-line bg-base/60 px-2 py-1 text-right font-mono text-sm text-white outline-none focus:border-cyanx/60" />`}
+              </td>`
+            : "";
+          const totalText = isSummon ? `${totalCount.toFixed(2)}x` : totalCount;
+
+          return `
+            <tr class="bg-base/30${componentMuted}">
+              <td class="px-3 py-2 pl-8">
+                <input type="checkbox" ${component.enabled ? "checked" : ""} data-skill-index="${parentIndex}" data-component-index="${componentIndex}" data-component-field="enabled"
+                  class="h-4 w-4 rounded border-line bg-panel2 text-cyanx focus:ring-cyanx/40" />
+              </td>
+              <td class="px-3 py-2 font-mono text-slate-500">${skill.learnLevel}</td>
+              <td class="px-3 py-2">
+                <div class="flex items-center gap-2 pl-5">
+                  <span class="text-slate-500">└</span>
+                  <span class="min-w-0 font-medium text-slate-200">${component.name}</span>
+                  ${typeBadge}
+                  ${summonWindowBadge}
+                </div>
+              </td>
+              <td class="px-3 py-2 text-right font-mono text-cyanx">${activeSkill.percentInput}</td>
+              <td class="px-3 py-2 text-right font-mono text-slate-300">${displayedCooldown.toFixed(1)}s</td>
+              ${countCell}
+              ${refreshCell}
+              <td class="px-3 py-2 text-right font-mono text-goldx">${totalText}</td>
+              <td class="px-3 py-2 text-right font-mono text-cyanx">${formatDamagePercent(damage)}</td>
+            </tr>
+          `;
+        };
+
+        const renderParentRow = row => {
+          const { skill, activeSkill, index, damage, componentRows } = row;
+          const state = getParentCheckState(skill);
+          const parentMuted = skill.enabled ? "" : " opacity-50";
+          const stateAttr = state.indeterminate ? "partial" : "normal";
+          const componentCountBadge = `<span class="rounded border border-cyanx/30 bg-cyanx/10 px-1.5 py-0.5 text-[11px] text-cyanx">${componentRows.length}项</span>`;
+          const nameBadges = renderSkillNameBadges(skill, activeSkill, componentCountBadge);
+          const vpButton = hasVpSettings(skill)
+            ? `<button type="button" data-vp-settings="${index}"
+                class="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-line bg-base/50 text-slate-400 transition hover:border-cyanx/50 hover:text-cyanx"
+                aria-label="设置 ${skill.name} VP">
+                <i data-lucide="settings" class="h-3.5 w-3.5"></i>
+              </button>`
+            : "";
+          const refreshCell = appState.skillRefresh ? `<td class="px-3 py-2 text-right text-xs text-slate-500">子项</td>` : "";
+
+          return `
+            <tr class="border-t border-line bg-panel2/75${parentMuted}">
+              <td class="px-3 py-2">
+                <input type="checkbox" ${state.checked ? "checked" : ""} data-parent-state="${stateAttr}" data-skill-index="${index}" data-skill-field="enabled"
+                  class="h-4 w-4 rounded border-line bg-panel2 text-cyanx focus:ring-cyanx/40" />
+              </td>
+              <td class="px-3 py-2 font-mono text-slate-300">${skill.learnLevel}</td>
+              <td class="px-3 py-2">
+                <div class="flex items-center gap-2">
+                  <span class="min-w-0 font-semibold text-white">${skill.name}</span>
+                  ${nameBadges}
+                  ${vpButton}
+                </div>
+              </td>
+              <td class="px-3 py-2 text-right text-slate-500">--</td>
+              <td class="px-3 py-2 text-right text-slate-500">--</td>
+              <td class="px-3 py-2 text-right text-slate-500">子项</td>
+              ${refreshCell}
+              <td class="px-3 py-2 text-right text-slate-500">--</td>
+              <td class="px-3 py-2 text-right font-mono text-cyanx">${formatDamagePercent(damage)}</td>
+            </tr>
+            ${componentRows.map(componentRow => renderComponentRow(componentRow, index)).join("")}
+          `;
+        };
+
+        body.innerHTML = summary.rows.map(row => row.componentRows ? renderParentRow(row) : renderFlatRow(row)).join("");
+        body.querySelectorAll("[data-parent-state='partial']").forEach(checkbox => {
+          checkbox.indeterminate = true;
+        });
         renderDamageSummary(summary);
 
         if (!modal.classList.contains("hidden")) {
@@ -1061,6 +1468,8 @@
         const body = document.getElementById("skillTableBody");
         const vpLayer = document.getElementById("vpChoiceLayer");
         const vpTitle = document.getElementById("vpChoiceTitle");
+        const vp1ChoiceHint = document.getElementById("vp1ChoiceHint");
+        const vp2ChoiceHint = document.getElementById("vp2ChoiceHint");
         const vpChoiceButtons = document.querySelectorAll(".vp-choice-btn");
         const vpEnhanceButtons = document.querySelectorAll(".vp-enhance-btn");
         const vpEnhanceCount = document.getElementById("vpEnhanceCount");
@@ -1071,6 +1480,14 @@
           return Number.isInteger(index) ? getCurrentClassPreset().skills[index] : null;
         }
 
+        function getVpChoiceHint(skill, mode) {
+          const option = skill.vpOptions?.[mode];
+          if (!option) {
+            return `等待录入该职业 ${mode.toUpperCase()} 数据。`;
+          }
+          return `使用 ${mode.toUpperCase()} 数据：${option.percentInput} / ${Number(option.cooldown).toFixed(1)}s。`;
+        }
+
         function renderVpChoice() {
           const skill = getEditingVpSkill();
           if (!skill) {
@@ -1078,6 +1495,8 @@
           }
 
           vpTitle.textContent = skill.name;
+          vp1ChoiceHint.textContent = getVpChoiceHint(skill, "vp1");
+          vp2ChoiceHint.textContent = getVpChoiceHint(skill, "vp2");
           vpChoiceButtons.forEach(button => {
             const mode = button.dataset.vpChoice;
             const active = (skill.vpMode || "none") === mode;
@@ -1169,14 +1588,37 @@
         function updateSkillField(event) {
           const target = event.target;
           const index = Number(target.dataset.skillIndex);
-          const field = target.dataset.skillField;
+          const componentIndex = target.dataset.componentIndex !== undefined ? Number(target.dataset.componentIndex) : null;
+          const field = target.dataset.skillField || target.dataset.componentField;
           const skill = getCurrentClassPreset().skills[index];
           if (!skill || !field) {
             return;
           }
 
-          if (field === "enabled") {
-            skill.enabled = target.checked;
+          const component = Number.isInteger(componentIndex) && hasComponents(skill)
+            ? skill.components[componentIndex]
+            : null;
+
+          if (component) {
+            if (field === "enabled") {
+              component.enabled = target.checked;
+              syncParentEnabled(skill);
+            } else if (field === "baseCount") {
+              component.baseCount = clampCount(target.value, 0, getSkillCountLimit(skill, component));
+            } else if (field === "refreshCount") {
+              component.refreshCount = getRefreshCount(skill, { refreshCount: target.value });
+            } else if (field === "efficiency") {
+              component.efficiency = Math.max(Number.parseFloat(target.value) || 0, 0) / 100;
+            }
+          } else if (field === "enabled") {
+            if (hasComponents(skill)) {
+              skill.components.forEach(componentItem => {
+                componentItem.enabled = target.checked;
+              });
+              syncParentEnabled(skill);
+            } else {
+              skill.enabled = target.checked;
+            }
           } else if (field === "baseCount") {
             skill.baseCount = clampCount(target.value, 0, getSkillCountLimit(skill));
           } else if (field === "refreshCount") {
@@ -1198,8 +1640,7 @@
             }
 
             skill.vpMode = mode;
-            delete skill.baseCount;
-            delete skill.refreshCount;
+            clearSkillCounts(skill);
             closeVpChoice();
             renderSkillTable();
           });
@@ -1214,8 +1655,7 @@
             }
 
             skill.vpEnhance = value;
-            delete skill.baseCount;
-            delete skill.refreshCount;
+            clearSkillCounts(skill);
             renderVpChoice();
             renderSkillTable();
           });
